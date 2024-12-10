@@ -39,3 +39,6 @@ class NodeWidget(QGraphicsItem):
         # Draw node content area
         painter.setBrush(self.contentBackground)
         painter.drawRect(self.getContentArea())
+
+    def setLabelText(self, text: str) -> None:
+        self.labelText = text
