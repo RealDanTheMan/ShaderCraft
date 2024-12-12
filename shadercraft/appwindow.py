@@ -1,23 +1,19 @@
 import sys
-from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsView
+from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QMainWindow
+from .windowbase import Ui_MainWindow
 from .node import Node
 
 
-class AppWindow(object):
+class AppWindow(QMainWindow):
     def __init__(self) -> None:
-        self.__app = QApplication(sys.argv)
+        super(AppWindow, self).__init__()
+        self.ui = Ui_MainWindow()
+        self.ui.setupUi(self)
+
         self.__nodes: list[Node] = []
         self.__scene = QGraphicsScene()
-        self.__view = QGraphicsView(self.__scene)
-        self.__view.setWindowTitle("Shader Craft")
-        self.__view.resize(800, 600)
-        self.__view.show()
+        self.ui.NodeGraphView.setScene(self.__scene)
         self.__addTestNodes()
-
-    def run(self) -> None:
-        """Main loop method for this application window, not blocking"""
-        err_code = self.__app.exec()
-        sys.exit(err_code)
 
     def addNode(self, node: Node) -> None:
         """Adds given node to this app scene view"""
