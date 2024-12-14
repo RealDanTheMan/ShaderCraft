@@ -1,5 +1,6 @@
 import sys
 from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QMainWindow
+from PySide6.QtCore import Qt
 from .windowbase import Ui_MainWindow
 from .node import Node
 
@@ -9,6 +10,9 @@ class AppWindow(QMainWindow):
         super(AppWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
+        self.ui.NodeGraphView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ui.NodeGraphView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.ui.NodeGraphView.setDragMode(QGraphicsView.NoDrag)
 
         self.__nodes: list[Node] = []
         self.__scene = QGraphicsScene()
