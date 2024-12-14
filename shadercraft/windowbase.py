@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'ShaderCraftWindowCmdJjD.ui'
+## Form generated from reading UI file 'windowbaseUpOvCv.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.1
 ##
@@ -84,6 +84,12 @@ class Ui_MainWindow(object):
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
         self.NodeGraphView = QGraphicsView(self.NodeGraphFrame)
         self.NodeGraphView.setObjectName(u"NodeGraphView")
+        self.NodeGraphView.setAutoFillBackground(True)
+        self.NodeGraphView.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.NodeGraphView.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        brush = QBrush(QColor(61, 56, 70, 255))
+        brush.setStyle(Qt.Dense4Pattern)
+        self.NodeGraphView.setBackgroundBrush(brush)
 
         self.verticalLayout_2.addWidget(self.NodeGraphView)
 
