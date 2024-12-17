@@ -105,13 +105,17 @@ class NodePin(QObject, QGraphicsItem):
         QObject.__init__(self, None)
         QGraphicsItem.__init__(self, None)
 
+        self.setAcceptHoverEvents(True)
+        self.setAcceptDrops(True)
         self.radius = 6
         self.foreground = QColor(0, 200, 0)
+        self.foregroundHighlight = QColor(200, 0, 100)
         self.uuid = uuid.uuid1()
+        self.__activeColor = self.foreground
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = ...) -> None:
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(self.foreground)
+        painter.setBrush(self.__activeColor)
         painter.drawEllipse(0, 0, self.radius*2, self.radius*2)
 
     def boundingRect(self) -> QRectF:
@@ -123,3 +127,11 @@ class NodePin(QObject, QGraphicsItem):
 
     def getUUID(self) -> uuid.UUID:
         return self.uuid
+
+    def hoverEnterEvent(self, event):
+        self.__activeColor = self.foregroundHighlight
+        super().hoverEnterEvent(event)
+
+    def hoverLeaveEvent(self, event):
+        self.__activeColor = self.foreground
+        super().hoverLeaveEvent(event)
