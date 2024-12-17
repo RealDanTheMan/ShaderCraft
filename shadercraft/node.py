@@ -1,3 +1,5 @@
+from __future__ import annotations
+import uuid
 from enum import Enum
 from PySide6.QtCore import QPointF, Slot
 from .node_widget import NodeWidget
@@ -13,9 +15,20 @@ class NodeParameterValue(Enum):
 
 class NodeInputOutput(object):
     def __init__(self):
+        self.uuid: uuid.UUID = uuid.uuid1()
         self.name: str = None
         self.label: str = None
         self.valueType: NodeParameterValue = NodeParameterValue.NoValue
+
+    @staticmethod
+    def create(name: str, label: str, value: NodeParameterValue) -> NodeInputOutput:
+        """Shorthand function for creating node input/outputs"""
+        inout = NodeInputOutput()
+        inout.uuid = uuid.uuid1()
+        inout.name = name
+        inout.label = label
+        inout.valueType = value
+        return inout
 
 
 class Node(object):
@@ -30,32 +43,30 @@ class Node(object):
         self.__outputs: list[NodeInputOutput] = []
         self.__inputs: list[NodeInputOutput] = []
 
-    def addOutput(self, name: str, label: str, type: NodeParameterValue):
+    def _addOutput(self, name: str, label: str, type: NodeParameterValue):
+        """Add new value output for this node"""
         assert (name is not None)
         assert (label is not None)
         assert (type is not NodeParameterValue.NoValue)
 
-        output = NodeInputOutput()
-        output.name = name
-        output.label = label
-        output.valueType = type
+        output = NodeInputOutput.create(name, label, type)
         self.__outputs.append(output)
 
-    def addInput(self, name: str, label: str, type: NodeParameterValue):
+    def _addInput(self, name: str, label: str, type: NodeParameterValue):
+        """Add new value input for this node"""
         assert (name is not None)
         assert (label is not None)
         assert (type is not NodeParameterValue.NoValue)
 
-        input = NodeInputOutput()
-        input.name = name
-        input.label = label
-        input.valueType = type
+        input = NodeInputOutput.create(name, label, type)
         self.__inputs.append(input)
 
     def initWidget(self) -> None:
         """Create widget object representing this node"""
         self.widget = NodeWidget()
         self.widget.setLabelText(self.label)
+        self.widget.addInputs([i.uuid for i in self.__inputs])
+        self.widget.addOutputs([i.uuid for i in self.__outputs])
         self.widget.positionChanged.connect(self.onWidgetPositionChanged)
 
     def getWidget(self) -> NodeWidget:
