@@ -1,3 +1,4 @@
+import uuid
 from PySide6.QtGui import QPainter, QColor
 from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal, QObject
@@ -10,6 +11,7 @@ class NodeWidget(QObject, QGraphicsItem):
         QObject.__init__(self, None)
         QGraphicsItem.__init__(self, None)
 
+        self.uuid = uuid.uuid1()
         self.width: float = 128
         self.height: float = 128
         self.setFlag(QGraphicsItem.ItemIsMovable)
@@ -20,6 +22,8 @@ class NodeWidget(QObject, QGraphicsItem):
         self.labelText = "Node"
         self.contentBackground = QColor(200, 200, 200)
         self.contentForeground = QColor(250, 250, 250)
+        self.__inputPins: [NodePin] = []
+        self.__outputPins: [NodePin] = []
 
     def boundingRect(self) -> QRectF:
         """Get bounding area representing the entire node widget"""
@@ -38,7 +42,6 @@ class NodeWidget(QObject, QGraphicsItem):
         # Draw label area
         painter.setBrush(self.labelBackground)
         painter.drawRect(self.getLabelArea())
-        painter.drawRect
 
         # Draw label text
         text_area = self.getLabelArea().adjusted(10, 0, 0, 0)
@@ -64,3 +67,56 @@ class NodeWidget(QObject, QGraphicsItem):
     def setLabelText(self, text: str) -> None:
         """Update text drawn in the label area of the widget"""
         self.labelText = text
+
+    def addInputs(self, ids: [uuid.UUID]) -> None:
+        for id in ids:
+            pin = NodePin()
+            pin.uuid = id
+            pin.setParentItem(self)
+            self.__inputPins.append(pin)
+        self.updateLayout()
+
+    def addOutputs(self, ids: [uuid.UUID]) -> None:
+        for id in ids:
+            pin = NodePin()
+            pin.uuid = id
+            pin.setParentItem(self)
+            self.__outputPins.append(pin)
+        self.updateLayout()
+
+    def updateLayout(self):
+        pin_padding = 6
+        offset = self.labelHeight + pin_padding
+        for pin in self.__inputPins:
+            pin.setPos(-pin.getRadius(), offset)
+            offset += pin.boundingRect().height() + pin_padding
+
+        # Output pins layout
+        offset = self.labelHeight + pin_padding
+        for pin in self.__outputPins:
+            pin.setPos(self.getContentArea().width() - pin.getRadius(), offset)
+            offset += pin.boundingRect().height() + pin_padding
+
+
+class NodePin(QObject, QGraphicsItem):
+    def __init__(self):
+        QObject.__init__(self, None)
+        QGraphicsItem.__init__(self, None)
+
+        self.radius = 6
+        self.foreground = QColor(0, 200, 0)
+        self.uuid = uuid.uuid1()
+
+    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = ...) -> None:
+        painter.setBrush(self.foreground)
+        painter.drawEllipse(0, 0, self.radius*2, self.radius*2)
+
+    def boundingRect(self) -> QRectF:
+        """Get bounding area representing the entire node widget"""
+        return QRectF(0, 0, self.radius*2, self.radius*2)
+
+    def getRadius(self) -> int:
+        return self.radius
+
+    def getUUID(self) -> uuid.UUID:
+        return self.uuid
