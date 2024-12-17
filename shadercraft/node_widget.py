@@ -39,6 +39,8 @@ class NodeWidget(QObject, QGraphicsItem):
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = ...) -> None:
         """Draws the entire widget"""
+        painter.setRenderHint(QPainter.Antialiasing)
+
         # Draw label area
         painter.setBrush(self.labelBackground)
         painter.drawRect(self.getLabelArea())
@@ -108,6 +110,7 @@ class NodePin(QObject, QGraphicsItem):
         self.uuid = uuid.uuid1()
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = ...) -> None:
+        painter.setRenderHint(QPainter.Antialiasing)
         painter.setBrush(self.foreground)
         painter.drawEllipse(0, 0, self.radius*2, self.radius*2)
 
