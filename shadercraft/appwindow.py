@@ -3,7 +3,7 @@ from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QMain
 from PySide6.QtCore import Qt
 from .windowbase import Ui_MainWindow
 from .node import Node
-from .stdnodes import FloatNode
+from .stdnodes import FloatNode, MulNode
 
 
 class AppWindow(QMainWindow):
@@ -30,7 +30,7 @@ class AppWindow(QMainWindow):
 
     def __addTestNodes(self) -> None:
         """Create number of nodes useful for testing the application"""
-        node0 = Node()
+        node0 = MulNode()
         node1 = FloatNode()
         node2 = FloatNode()
 
