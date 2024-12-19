@@ -4,7 +4,6 @@ from enum import Enum
 from PySide6.QtCore import QPointF, Slot
 from .node_widget import NodeWidget
 
-
 class NodeParameterValue(Enum):
     NoValue = 0
     Float = 1
@@ -30,12 +29,11 @@ class NodeInputOutput(object):
         inout.valueType = value
         return inout
 
-
 class Node(object):
     def __init__(self) -> None:
         self.label: str = "Node Label"
         self.name: str = "Node Name"
-        self.guid: int = 0
+        self.uuid: uuid.UUID = uuid.uuid1()
         self.widget: NodeWidget = None
         self.posx: float = 0.0
         self.posy: float = 0.0
