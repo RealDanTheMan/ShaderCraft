@@ -1,8 +1,8 @@
 from __future__ import annotations
 from uuid import UUID, uuid1
-from PySide6.QtCore import QObject, QRectF, QPointF, QLine, QPoint
+from PySide6.QtCore import QObject, QRectF, QPointF, QLine, QPoint, Qt
 from PySide6.QtWidgets import QGraphicsItem
-from PySide6.QtGui import QPainter, QColor
+from PySide6.QtGui import QPainter, QColor, QPen
 
 from .node_widget import NodePin
 
@@ -20,8 +20,11 @@ class ConnectionWidget(QObject, QGraphicsItem):
         """Draws the entire widget"""
         assert (self.startpin is not None)
         assert (self.endpin is not None)
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QColor(0, 200, 0))
+
+        pen = QPen(Qt.green)
+        pen.setWidth(4)
+        painter.setPen(pen)
+        
         line = QLine(self.startpin.scenePos().toPoint(), self.endpin.scenePos().toPoint())
         painter.drawLine(line)
 

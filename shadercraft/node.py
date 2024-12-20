@@ -46,6 +46,9 @@ class NodeConnection(object):
         self.target_uuid = target_uuid
         self._widget: ConnectionWidget = self._createWidget()
 
+        self.source.positionChanged.connect(self.onConnectedNodePositionChanged)
+        self.target.positionChanged.connect(self.onConnectedNodePositionChanged)
+
     def _createWidget(self) -> ConnectionWidget:
         startpin = self.source.getWidget().getOutputPin(self.source_uuid)
         endpin = self.target.getWidget().getInputPin(self.target_uuid)
@@ -55,10 +58,18 @@ class NodeConnection(object):
     def getWidget(self) -> ConnectionWidget:
         return self._widget
 
+    @Slot(QPointF)
+    def onConnectedNodePositionChanged(self, value: QPointF) -> None:
+        """Event handler invoked when either source or target node changes position"""
+        assert (self.getWidget() is not None)
+        # Trigger widget re-draw
+        self.getWidget().update()
+
 
 class Node(QObject):
     connectionAdded = Signal(NodeConnection)
     connectionRemoved = Signal(NodeConnection)
+    positionChanged = Signal(QPointF)
 
     def __init__(self) -> None:
         QObject.__init__(self, None)
@@ -72,7 +83,7 @@ class Node(QObject):
 
         self.__outputs: list[NodeInputOutput] = []
         self.__inputs: list[NodeInputOutput] = []
-        self.__connection: list[NodeConnection] = []
+        self.__connections: list[NodeConnection] = []
 
     def _addOutput(self, name: str, label: str, type: NodeParameterValue):
         """Add new value output for this node"""
@@ -117,13 +128,13 @@ class Node(QObject):
             return False
         
         con = NodeConnection(src, src_uuid, self, uuid)
-        self.__connection.append(con)
+        self.__connections.append(con)
         self.connectionAdded.emit(con)
 
         return True
 
     def getConnection(self, uuid: UUID) -> Optional[NodeConnection]:
-        for con in self.__connection:
+        for con in self.__connections:
             if con.uuid == uuid:
                 return con
         return None
@@ -145,6 +156,7 @@ class Node(QObject):
         """Event handler invoked when bound widget changes position"""
         self.posx = value.x()
         self.posy = value.y()
+        self.positionChanged.emit(QPointF(self.posx, self.posy))
 
     def setPosition(self, x: float, y: float) -> None:
         """Upadate position of this node, will also update widget position"""
@@ -152,3 +164,4 @@ class Node(QObject):
         self.posy = y
         if self.widget:
             self.widget.setPos(QPointF(x, y))
+        self.positionChanged.emit(QPointF(x, y))
