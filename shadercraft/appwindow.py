@@ -22,3 +22,7 @@ class AppWindow(QMainWindow):
 
         self.NodeGraph: NodeGraphScene = NodeGraphScene()
         self.NodeGraphView.setScene(self.NodeGraph)
+
+        self.NodeGraphView.update()
+        asp = self.NodeGraphView.rect().width() / self.NodeGraphView.rect().height()
+        self.NodeGraphView.setSceneRect(0,0,2000, 2000/asp)
