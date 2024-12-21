@@ -18,7 +18,7 @@
    </sizepolicy>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>ShaderCraft</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <property name="sizePolicy">
@@ -115,30 +115,7 @@
           <property name="frameShadow">
            <enum>QFrame::Shadow::Raised</enum>
           </property>
-          <layout class="QVBoxLayout" name="verticalLayout_2">
-           <item>
-            <widget class="QGraphicsView" name="NodeGraphView">
-             <property name="autoFillBackground">
-              <bool>true</bool>
-             </property>
-             <property name="verticalScrollBarPolicy">
-              <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
-             </property>
-             <property name="horizontalScrollBarPolicy">
-              <enum>Qt::ScrollBarPolicy::ScrollBarAlwaysOff</enum>
-             </property>
-             <property name="backgroundBrush">
-              <brush brushstyle="Dense4Pattern">
-               <color alpha="255">
-                <red>61</red>
-                <green>56</green>
-                <blue>70</blue>
-               </color>
-              </brush>
-             </property>
-            </widget>
-           </item>
-          </layout>
+          <layout class="QVBoxLayout" name="verticalLayout_2"/>
          </widget>
         </item>
         <item>

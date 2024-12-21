@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'windowbaseUpOvCv.ui'
+## Form generated from reading UI file 'windowbasetMVVyC.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.1
 ##
@@ -15,9 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QGraphicsView, QHBoxLayout,
-    QMainWindow, QMenuBar, QSizePolicy, QStatusBar,
-    QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QMainWindow,
+    QMenuBar, QSizePolicy, QStatusBar, QVBoxLayout,
+    QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -82,17 +82,6 @@ class Ui_MainWindow(object):
         self.NodeGraphFrame.setFrameShadow(QFrame.Shadow.Raised)
         self.verticalLayout_2 = QVBoxLayout(self.NodeGraphFrame)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.NodeGraphView = QGraphicsView(self.NodeGraphFrame)
-        self.NodeGraphView.setObjectName(u"NodeGraphView")
-        self.NodeGraphView.setAutoFillBackground(True)
-        self.NodeGraphView.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.NodeGraphView.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        brush = QBrush(QColor(61, 56, 70, 255))
-        brush.setStyle(Qt.Dense4Pattern)
-        self.NodeGraphView.setBackgroundBrush(brush)
-
-        self.verticalLayout_2.addWidget(self.NodeGraphView)
-
 
         self.CenterWorkArea.addWidget(self.NodeGraphFrame)
 
@@ -149,6 +138,6 @@ class Ui_MainWindow(object):
     # setupUi
 
     def retranslateUi(self, MainWindow):
-        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
+        MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"ShaderCraft", None))
     # retranslateUi
 

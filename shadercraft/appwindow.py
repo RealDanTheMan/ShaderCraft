@@ -5,16 +5,20 @@ from .windowbase import Ui_MainWindow
 from .nodegraphscene import NodeGraphScene
 from .node import Node
 from .stdnodes import FloatNode, MulNode
-
+from .nodegraphview import NodeGraphView
 
 class AppWindow(QMainWindow):
     def __init__(self) -> None:
         super(AppWindow, self).__init__()
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
-        self.ui.NodeGraphView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.ui.NodeGraphView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.ui.NodeGraphView.setDragMode(QGraphicsView.NoDrag)
+        
+        # Create and setup node graph viewport
+        self.NodeGraphView: NodeGraphView = NodeGraphView()
+        self.NodeGraphView.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.NodeGraphView.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.NodeGraphView.setDragMode(QGraphicsView.NoDrag)
+        self.ui.NodeGraphFrame.layout().addWidget(self.NodeGraphView)
 
         self.NodeGraph: NodeGraphScene = NodeGraphScene()
-        self.ui.NodeGraphView.setScene(self.NodeGraph)
+        self.NodeGraphView.setScene(self.NodeGraph)
