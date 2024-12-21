@@ -19,6 +19,7 @@ class NodeWidget(QObject, QGraphicsItem):
         self.height: float = 128
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
+        self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
         self.labelHeight = 20
         self.labelBackground = QColor(92, 92, 92)
         self.labelForeground = QColor(220, 220, 220)

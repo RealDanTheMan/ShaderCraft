@@ -32,11 +32,13 @@ class ConnectionWidget(QObject, QGraphicsItem):
         assert (self.startpin is not None)
         assert (self.endpin is not None)
 
-        start = self.startpin.boundingRect()
-        end = self.endpin.boundingRect()
-        left = min(start.left(), end.left())
-        right = max(start.right(), end.right())
-        top = min(start.top(), end.top())
-        bottom = max(start.bottom(), end.bottom())
+        start = self.startpin.scenePos()
+        end = self.endpin.scenePos()
+        
+
+        left = min(start.x(), end.x())
+        right = max(start.x(), end.x())
+        top = min(start.y(), end.y())
+        bottom = max(start.y(), end.y())
 
         return QRectF(QPointF(left, top), QPointF(right, bottom))

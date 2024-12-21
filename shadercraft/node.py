@@ -63,6 +63,7 @@ class NodeConnection(object):
         """Event handler invoked when either source or target node changes position"""
         assert (self.getWidget() is not None)
         # Trigger widget re-draw
+        self.getWidget().prepareGeometryChange()
         self.getWidget().update()
 
 
