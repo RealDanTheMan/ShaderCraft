@@ -203,3 +203,8 @@ class NodePin(QObject, QGraphicsItem):
         """Event handler invoked when them mouse pointer changes location wile button is pressed"""
         #print("Mouse move event")
         #super().mouseMoveEvent(event)
+
+    def getSceneCenterPos(self) -> QPointF:
+        x = self.scenePos().x() + float(self.radius)
+        y = self.scenePos().y() + float(self.radius)
+        return QPointF(x, y)

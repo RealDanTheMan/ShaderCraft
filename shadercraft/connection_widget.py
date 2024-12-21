@@ -8,6 +8,8 @@ from .node_widget import NodePin
 
 
 class ConnectionWidget(QObject, QGraphicsItem):
+    pin_radius: float = 6
+
     def __init__(self, startpin: NodePin, endpin: NodePin, uuid: UUID = uuid1()) -> None:
         QObject.__init__(self, None)
         QGraphicsItem.__init__(self, None)
@@ -22,11 +24,13 @@ class ConnectionWidget(QObject, QGraphicsItem):
         assert (self.endpin is not None)
 
         pen = QPen(Qt.green)
-        pen.setWidth(4)
+        pen.setWidth(3)
         painter.setPen(pen)
-        
-        line = QLine(self.startpin.scenePos().toPoint(), self.endpin.scenePos().toPoint())
-        painter.drawLine(line)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        start = self.startpin.getSceneCenterPos().toPoint()
+        end = self.endpin.getSceneCenterPos().toPoint()
+        painter.drawLine(QLine(start, end))
 
     def boundingRect(self) -> QRectF:
         assert (self.startpin is not None)
@@ -34,11 +38,11 @@ class ConnectionWidget(QObject, QGraphicsItem):
 
         start = self.startpin.scenePos()
         end = self.endpin.scenePos()
-        
 
         left = min(start.x(), end.x())
         right = max(start.x(), end.x())
         top = min(start.y(), end.y())
         bottom = max(start.y(), end.y())
+        exp = self.pin_radius * 2
 
-        return QRectF(QPointF(left, top), QPointF(right, bottom))
+        return QRectF(QPointF(left - exp, top - exp), QPointF(right + exp, bottom + exp))
