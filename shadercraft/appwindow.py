@@ -6,7 +6,6 @@ from shadercraft.shadernodes import ShaderNodeBase
 from .windowbase import Ui_MainWindow
 from .nodegraphscene import NodeGraphScene
 from .node import Node
-from .stdnodes import FloatNode, MulNode
 from .nodegraphview import NodeGraphView
 
 class AppWindow(QMainWindow):
