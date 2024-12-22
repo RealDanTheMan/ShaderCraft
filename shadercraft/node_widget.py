@@ -68,7 +68,8 @@ class NodeWidget(QObject, QGraphicsItem):
     def mouseReleaseEvent(self, event):
         """Override for handling mouse releases performed on this widget"""
         super().mouseReleaseEvent(event)
-        self.positionChanged.emit(self.scenePos())
+        if event.button is Qt.MouseButton.LeftButton:
+            self.positionChanged.emit(self.scenePos())
 
     def setLabelText(self, text: str) -> None:
         """Update text drawn in the label area of the widget"""
