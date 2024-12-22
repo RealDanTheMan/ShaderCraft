@@ -15,6 +15,20 @@ class NodeParameterValue(Enum):
     Float4 = 4
 
 
+class NodeValue(object):
+    __noValue: NodeValue
+    def __init__(self, value_type, value) -> None:
+        self.value_type = value_type
+        self.value = value
+
+    @classmethod
+    def NoValue(cls) -> NodeValue:
+        if cls.__noValue is None:
+            cls.__noValue = NodeValue(None, None)
+        return cls.__noValue
+
+
+
 class NodeInputOutput(object):
     """
     Class representing node inputs or outputs.
@@ -58,6 +72,11 @@ class NodeConnection(object):
     def getWidget(self) -> ConnectionWidget:
         return self._widget
 
+    def getSourceValue(self) -> Optional[NodeValue]:
+        assert (self.source is not None)
+        assert (self.source_uuid is not None)
+        return self.source.getNodeOutputValue(self.source_uuid)
+
     @Slot(QPointF)
     def onConnectedNodePositionChanged(self, value: QPointF) -> None:
         """Event handler invoked when either source or target node changes position"""
@@ -76,7 +95,7 @@ class Node(QObject):
         QObject.__init__(self, None)
 
         self.label: str = "Node Label"
-        self.name: str = "Node Name"
+        self.name: str = "Node_Name"
         self.uuid: UUID = uuid1()
         self.widget: NodeWidget = None
         self.posx: float = 0.0
@@ -86,23 +105,25 @@ class Node(QObject):
         self.__inputs: list[NodeInputOutput] = []
         self.__connections: list[NodeConnection] = []
 
-    def _addOutput(self, name: str, label: str, type: NodeParameterValue):
+    def _addOutput(self, name: str, label: str, type: NodeParameterValue) -> NodeInputOutput:
         """Add new value output for this node"""
         assert (name is not None)
         assert (label is not None)
         assert (type is not NodeParameterValue.NoValue)
 
-        output = NodeInputOutput.create(name, label, type)
-        self.__outputs.append(output)
+        node_out = NodeInputOutput.create(name, label, type)
+        self.__outputs.append(node_out)
+        return node_out
 
-    def _addInput(self, name: str, label: str, type: NodeParameterValue):
+    def _addInput(self, name: str, label: str, type: NodeParameterValue) -> NodeInputOutput:
         """Add new value input for this node"""
         assert (name is not None)
         assert (label is not None)
         assert (type is not NodeParameterValue.NoValue)
 
-        input = NodeInputOutput.create(name, label, type)
-        self.__inputs.append(input)
+        node_in = NodeInputOutput.create(name, label, type)
+        self.__inputs.append(node_in)
+        return node_in
 
     def getNodeInput(self, uuid: UUID) -> Optional[NodeInputOutput]:
         """Get node input which matches given UUID"""
@@ -112,12 +133,49 @@ class Node(QObject):
                 return input
         return None
 
+    def getNodeInputs(self) -> list[NodeInputOutput]:
+        """Get list of all node inputs"""
+        return list(self.__inputs)
+
+    def getNodeInputValue(self, uuid: UUID) -> Optional[NodeValue]:
+        node_in = self.getNodeInput(uuid)
+        if node_in is not None:
+            con = self.getConnectionFromInput(node_in)
+            if con:
+                con.getSourceValue()
+            else:
+                return self._generateInputValue(node_in)
+        else:
+            return None
+
+    def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
+        return NodeValue.NoValue()
+
     def getNodeOutput(self, uuid: UUID) -> Optional[NodeInputOutput]:
         """Get node output which matches given UUID"""
         for output in self.__outputs:
             if output.uuid == uuid:
                 return output
         return None
+
+    def getNodeOutputs(self) -> list[NodeInputOutput]:
+        """Get list of all node outputs"""
+        return list(self.__outputs)
+
+    def getNodeOutputValue(self, uuid: UUID) -> Optional[NodeValue]:
+        """Get value for node output matching given UUID"""
+        output = self.getNodeOutput(uuid)
+        if output is not None:
+            return self._generateOutput(output)
+        else:
+            return None
+
+    def _generateOutput(self, node_output: NodeInputOutput) -> NodeValue:
+        """
+        Generates output value for given node outout.
+        Derived class should implement this for all node outputs.
+        """
+        return NodeValue.NoValue()
 
     def addConnection(self, uuid: UUID, src: Node, src_uuid: UUID) -> bool:
         assert (uuid)
@@ -137,6 +195,12 @@ class Node(QObject):
     def getConnection(self, uuid: UUID) -> Optional[NodeConnection]:
         for con in self.__connections:
             if con.uuid == uuid:
+                return con
+        return None
+
+    def getConnectionFromInput(self, node_in: NodeInputOutput) -> Optional[NodeConnection]:
+        for con in self.__connections:
+            if con.target_uuid == node_in.uuid:
                 return con
         return None
 
