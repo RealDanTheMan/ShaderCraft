@@ -5,7 +5,7 @@ from uuid import UUID, uuid1
 import PySide6
 from .node import Node, NodeConnection, NodeInputOutput
 from .node_widget import NodeWidget, NodePin
-from .stdnodes import FloatNode, MulNode
+from .shadernodes import FloatShaderNode, MulShaderNode
 from PySide6.QtWidgets import QGraphicsScene
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtCore import Signal, Slot
@@ -35,9 +35,9 @@ class NodeGraphScene(QGraphicsScene):
 
     def __addTestNodes(self) -> None:
         """Create and add set of node to the scene, usefull for testing"""
-        node0 = MulNode()
-        node1 = FloatNode()
-        node2 = FloatNode()
+        node0 = MulShaderNode()
+        node1 = FloatShaderNode()
+        node2 = FloatShaderNode()
 
         self.addNode(node0)
         self.addNode(node1)
@@ -46,6 +46,9 @@ class NodeGraphScene(QGraphicsScene):
         node0.setPosition(-200, 200)
         node1.setPosition(300, -100)
         node2.setPosition(0, 0)
+
+    def getAllNodes(self) -> list[Node]:
+        return list(self.__nodes)
 
     def getNodeFromWidget(self, widget: NodeWidget) -> Optional[Node]:
         """Get handle to the node linked to given node widget"""
