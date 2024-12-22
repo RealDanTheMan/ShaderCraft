@@ -26,7 +26,7 @@ class FloatShaderNode(ShaderNodeBase):
         return NodeValue.NoValue()
 
     def generateShaderCode(self) -> str:
-        src: str = f"float  {self.name}_FloatOutput = {self.default_val};"
+        src: str = f"float  {self.name}_FloatOutput = {self.default_val}f;"
         return src
 
 
@@ -48,9 +48,9 @@ class MulShaderNode(ShaderNodeBase):
 
     def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
         if node_input is self._inputA:
-            return NodeValue(str, f"{self._def_input_a}")
+            return NodeValue(str, f"{self._def_input_a}f")
         if node_input is self._inputB:
-            return NodeValue(str, f"{self._def_input_b}")
+            return NodeValue(str, f"{self._def_input_b}f")
 
         return NodeValue.NoValue()
 
