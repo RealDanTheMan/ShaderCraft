@@ -73,9 +73,13 @@ class NodeConnection(object):
         return self._widget
 
     def getSourceValue(self) -> Optional[NodeValue]:
+        """Get node value from source end of this connection"""
         assert (self.source is not None)
         assert (self.source_uuid is not None)
-        return self.source.getNodeOutputValue(self.source_uuid)
+
+        value = self.source.getNodeOutputValue(self.source_uuid)
+        assert (value is not None)
+        return value
 
     @Slot(QPointF)
     def onConnectedNodePositionChanged(self, value: QPointF) -> None:
@@ -142,7 +146,7 @@ class Node(QObject):
         if node_in is not None:
             con = self.getConnectionFromInput(node_in)
             if con:
-                con.getSourceValue()
+                return con.getSourceValue()
             else:
                 return self._generateInputValue(node_in)
         else:
