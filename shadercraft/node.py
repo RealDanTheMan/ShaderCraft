@@ -64,12 +64,14 @@ class NodeConnection(object):
         self.target.positionChanged.connect(self.onConnectedNodePositionChanged)
 
     def _createWidget(self) -> ConnectionWidget:
+        """Create a widget representing this connection line on the graph"""
         startpin = self.source.getWidget().getOutputPin(self.source_uuid)
         endpin = self.target.getWidget().getInputPin(self.target_uuid)
         widget = ConnectionWidget(startpin, endpin, self.uuid)
         return widget
 
     def getWidget(self) -> ConnectionWidget:
+        """Get reference to widget linked to this node connection"""
         return self._widget
 
     def getSourceValue(self) -> Optional[NodeValue]:
@@ -142,6 +144,14 @@ class Node(QObject):
         return list(self.__inputs)
 
     def getNodeInputValue(self, uuid: UUID) -> Optional[NodeValue]:
+        """
+        Get value stored in this node input of matching UUID
+
+        If the input matching given UUID has connection the value will be 
+        resolved from the source end of the connection.
+
+        None return value indicates there is no input on this node matching given UUID.
+        """
         node_in = self.getNodeInput(uuid)
         if node_in is not None:
             con = self.getConnectionFromInput(node_in)
@@ -153,6 +163,7 @@ class Node(QObject):
             return None
 
     def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
+        """Generate default input value for given input property of the node"""
         return NodeValue.NoValue()
 
     def getNodeOutput(self, uuid: UUID) -> Optional[NodeInputOutput]:
@@ -176,12 +187,14 @@ class Node(QObject):
 
     def _generateOutput(self, node_output: NodeInputOutput) -> NodeValue:
         """
-        Generates output value for given node outout.
+        Generates output value for given node output.
+
         Derived class should implement this for all node outputs.
         """
         return NodeValue.NoValue()
 
     def addConnection(self, uuid: UUID, src: Node, src_uuid: UUID) -> bool:
+        """Add new connection between this node intput and another node output."""
         assert (uuid)
         assert (src)
         assert (src_uuid)
@@ -197,12 +210,14 @@ class Node(QObject):
         return True
 
     def getConnection(self, uuid: UUID) -> Optional[NodeConnection]:
+        """Get connection on this node that matches given UUID"""
         for con in self.__connections:
             if con.uuid == uuid:
                 return con
         return None
 
     def getConnectionFromInput(self, node_in: NodeInputOutput) -> Optional[NodeConnection]:
+        """Get connection on this node given input on this node forms traget of the connection"""
         for con in self.__connections:
             if con.target_uuid == node_in.uuid:
                 return con
