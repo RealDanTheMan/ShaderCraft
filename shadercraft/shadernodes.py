@@ -19,22 +19,22 @@ class FloatShaderNode(ShaderNodeBase):
         self.label = "Shader Float"
         self.default_input_val: float = 0.0
 
-        self.floatInput = NodeInputOutput.create("FloatInput", "Float In", NodeParameterValue.Float)
+        self.floatInput = NodeInputOutput.create("FloatInput", "Float In", NodeParameterValue.FLOAT)
         self._registerInput(self.floatInput)
 
-        self.floatOutput = NodeInputOutput.create("FloatOutput", "Float Out", NodeParameterValue.Float)
+        self.floatOutput = NodeInputOutput.create("FloatOutput", "Float Out", NodeParameterValue.FLOAT)
         self._registerOutput(self.floatOutput)
 
     def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
         if node_input is self.floatInput:
             return NodeValue(str, f"{self.default_input_val}")
         else:
-            return NodeValue.NoValue()
+            return NodeValue.noValue()
 
     def _generateOutput(self, node_output: NodeInputOutput) -> NodeValue:
         if node_output is self.floatOutput:
             return NodeValue(str, f"{self.name}_{self.floatOutput.name}")
-        return NodeValue.NoValue()
+        return NodeValue.noValue()
 
     def generateShaderCode(self) -> str:
         input_val = self.getNodeInputValue(self.floatInput.uuid)
@@ -55,19 +55,19 @@ class MulShaderNode(ShaderNodeBase):
         self._def_input_b = 1.0
         
         # Node inputs
-        self.inputA = NodeInputOutput.create("MulInputA", "Value A", NodeParameterValue.Float)
+        self.inputA = NodeInputOutput.create("MulInputA", "Value A", NodeParameterValue.FLOAT)
         self._registerInput(self.inputA)
-        self.inputB = NodeInputOutput.create("MulInputB", "Value B", NodeParameterValue.Float)
+        self.inputB = NodeInputOutput.create("MulInputB", "Value B", NodeParameterValue.FLOAT)
         self._registerInput(self.inputB)
         
         # Node output
-        self.floatOutput = NodeInputOutput.create("MulOutput", "Value", NodeParameterValue.Float)
+        self.floatOutput = NodeInputOutput.create("MulOutput", "Value", NodeParameterValue.FLOAT)
         self._registerOutput(self.floatOutput)
 
     def _generateOutput(self, node_output: NodeInputOutput) -> NodeValue:
         if node_output is self.floatOutput:
             return NodeValue(str, f"{self.name}_{self.floatOutput.name}")
-        return NodeValue.NoValue()
+        return NodeValue.noValue()
 
     def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
         if node_input is self.inputA:
@@ -75,7 +75,7 @@ class MulShaderNode(ShaderNodeBase):
         if node_input is self.inputB:
             return NodeValue(str, f"{self._def_input_b}f")
 
-        return NodeValue.NoValue()
+        return NodeValue.noValue()
 
     def generateShaderCode(self) -> str:
         input_a = self.getNodeInputValue(self.inputA.uuid)

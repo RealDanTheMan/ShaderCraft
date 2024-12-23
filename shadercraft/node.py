@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Optional
+from dataclasses import dataclass
 from uuid import UUID, uuid1
 from enum import Enum
 from PySide6.QtCore import QObject, QPointF, Slot, Signal
@@ -10,28 +11,35 @@ from .asserts import assertRef
 
 
 class NodeParameterValue(Enum):
-    NoValue = 0
-    Float = 1
-    Float2 = 2
-    Float3 = 3
-    Float4 = 4
+    NO_VALUE = 0
+    FLOAT = 1
+    FLOAT2 = 2
+    FLOAT3 = 3
+    FLOAT4 = 4
 
 
-class NodeValue():
-    __noValue: NodeValue
+@dataclass
+class NodeValue:
+    """
+    Class that encapsulates values passed between nodes.
+    Values can be passed between node inputs/outputs via connections.
+    """
+    __no_value: NodeValue
 
     def __init__(self, value_type, value) -> None:
         self.value_type = value_type
         self.value = value
 
     @classmethod
-    def NoValue(cls) -> NodeValue:
-        if cls.__noValue is None:
-            cls.__noValue = NodeValue(None, None)
-        return cls.__noValue
+    def noValue(cls) -> NodeValue:
+        """Get static value object representing no value"""
+        if cls.__no_value is None:
+            cls.__no_value = NodeValue(None, None)
+        return cls.__no_value
 
 
-class NodeInputOutput():
+@dataclass
+class NodeInputOutput:
     """
     Class representing node inputs or outputs.
     Inputs and outputs is how we can connection nodes and build logic.
@@ -40,7 +48,7 @@ class NodeInputOutput():
         self.uuid: UUID = uuid1()
         self.name: str = None
         self.label: str = None
-        self.valueType: NodeParameterValue = NodeParameterValue.NoValue
+        self.value_type: NodeParameterValue = NodeParameterValue.NO_VALUE
 
     @staticmethod
     def create(name: str, label: str, value: NodeParameterValue) -> NodeInputOutput:
@@ -49,7 +57,7 @@ class NodeInputOutput():
         inout.uuid = uuid1()
         inout.name = name
         inout.label = label
-        inout.valueType = value
+        inout.value_type = value
         return inout
 
 
@@ -99,6 +107,11 @@ class NodeConnection():
 
 
 class Node(QObject):
+    """
+    Class that encapsulates base node implementation.
+    Nodes can be added to the node graph scene and connected via their input/output to
+    produce logic.
+    """
     connectionAdded = Signal(NodeConnection)
     connectionRemoved = Signal(NodeConnection)
     positionChanged = Signal(QPointF)
@@ -166,7 +179,7 @@ class Node(QObject):
     def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
         """Generate default input value for given input property of the node"""
         assertRef(node_input)
-        return NodeValue.NoValue()
+        return NodeValue.noValue()
 
     def getNodeOutput(self, uuid: UUID) -> Optional[NodeInputOutput]:
         """Get node output which matches given UUID"""
@@ -193,7 +206,7 @@ class Node(QObject):
         Derived class should implement this for all node outputs.
         """
         assertRef(node_output)
-        return NodeValue.NoValue()
+        return NodeValue.noValue()
 
     def addConnection(self, uuid: UUID, src: Node, src_uuid: UUID) -> bool:
         """Add new connection between this node intput and another node output."""

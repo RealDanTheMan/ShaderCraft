@@ -161,7 +161,7 @@ class NodeGraphScene(QGraphicsScene):
         if input is None or output is None:
             print("Connection cancelled, failed to resolve node inputs/outputs")
             return False
-        if input.valueType is not output.valueType:
+        if input.value_type is not output.value_type:
             print("Connection cancelled, input/output does not have common value type")
             return False
        
