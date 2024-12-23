@@ -1,12 +1,13 @@
 from __future__ import annotations
 from typing import Optional
-from functools import wraps
 from uuid import UUID, uuid1
 from enum import Enum
 from PySide6.QtCore import QObject, QPointF, Slot, Signal
 
-from shadercraft.connection_widget import ConnectionWidget
-from .node_widget import NodeWidget, NodePin
+from .connection_widget import ConnectionWidget
+from .node_widget import NodeWidget
+from .asserts import assertRef
+
 
 class NodeParameterValue(Enum):
     NoValue = 0
@@ -16,8 +17,9 @@ class NodeParameterValue(Enum):
     Float4 = 4
 
 
-class NodeValue(object):
+class NodeValue():
     __noValue: NodeValue
+
     def __init__(self, value_type, value) -> None:
         self.value_type = value_type
         self.value = value
@@ -29,8 +31,7 @@ class NodeValue(object):
         return cls.__noValue
 
 
-
-class NodeInputOutput(object):
+class NodeInputOutput():
     """
     Class representing node inputs or outputs.
     Inputs and outputs is how we can connection nodes and build logic.
@@ -51,8 +52,10 @@ class NodeInputOutput(object):
         inout.valueType = value
         return inout
 
-class NodeConnection(object):
+
+class NodeConnection():
     """Class representing singular connection between owner node and nother"""
+
     def __init__(self, src: Node, src_uuid: UUID, target: Node, target_uuid: UUID):
         self.uuid = uuid1()
         self.source: Node = src
@@ -77,17 +80,19 @@ class NodeConnection(object):
 
     def getSourceValue(self) -> Optional[NodeValue]:
         """Get node value from source end of this connection"""
-        assert (self.source is not None)
-        assert (self.source_uuid is not None)
+        assertRef(self.source)
+        assertRef(self.source.uuid)
 
         value = self.source.getNodeOutputValue(self.source_uuid)
-        assert (value is not None)
+        assertRef(value)
         return value
 
     @Slot(QPointF)
     def onConnectedNodePositionChanged(self, value: QPointF) -> None:
         """Event handler invoked when either source or target node changes position"""
-        assert (self.getWidget() is not None)
+        assertRef(self.getWidget())
+        assertRef(value)
+
         # Trigger widget re-draw
         self.getWidget().prepareGeometryChange()
         self.getWidget().update()
@@ -113,33 +118,30 @@ class Node(QObject):
         self.__connections: list[NodeConnection] = []
 
     def _registerInput(self, node_input: NodeInputOutput) -> NodeInputOutput:
-        assert (node_input is not None)
-        assert (node_input.uuid is not None)
+        assertRef(node_input)
+        assertRef(node_input.uuid)
         if node_input.uuid in self.__inputs:
             raise ValueError("Node input with matching UUID already exists!")
 
         self.__inputs[node_input.uuid] = node_input
         return self.__inputs[node_input.uuid]
 
-
     def _registerOutput(self, node_output: NodeInputOutput) -> NodeInputOutput:
-        assert (node_output is not None)
-        assert (node_output.uuid is not None)
+        assertRef(node_output)
+        assertRef(node_output.uuid)
         if node_output.uuid in self.__outputs:
             raise ValueError("Node output with matching UUID already exists!")
 
         self.__outputs[node_output.uuid] = node_output
         return self.__outputs[node_output.uuid]
-        
 
     def getNodeInput(self, uuid: UUID) -> Optional[NodeInputOutput]:
         """Get node input which matches given UUID"""
-        assert (uuid is not None)
-        if not uuid in self.__inputs:
+        assertRef(uuid)
+        if uuid not in self.__inputs:
             return None
-        else:
-            return self.__inputs[uuid]
-        
+        return self.__inputs[uuid]
+
     def getNodeInputs(self) -> list[NodeInputOutput]:
         """Get list of all node inputs"""
         return list(self.__inputs.values())
@@ -148,7 +150,7 @@ class Node(QObject):
         """
         Get value stored in this node input of matching UUID
 
-        If the input matching given UUID has connection the value will be 
+        If the input matching given UUID has connection the value will be
         resolved from the source end of the connection.
 
         None return value indicates there is no input on this node matching given UUID.
@@ -158,22 +160,20 @@ class Node(QObject):
             con = self.getConnectionFromInput(node_in)
             if con:
                 return con.getSourceValue()
-            else:
-                return self._generateInputValue(node_in)
-        else:
-            return None
+            return self._generateInputValue(node_in)
+        return None
 
     def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
         """Generate default input value for given input property of the node"""
+        assertRef(node_input)
         return NodeValue.NoValue()
 
     def getNodeOutput(self, uuid: UUID) -> Optional[NodeInputOutput]:
         """Get node output which matches given UUID"""
-        assert (uuid is not None)
-        if not uuid in self.__outputs:
+        assertRef(uuid)
+        if uuid not in self.__outputs:
             return None
-        else:
-            return self.__outputs[uuid]
+        return self.__outputs[uuid]
 
     def getNodeOutputs(self) -> list[NodeInputOutput]:
         """Get list of all node outputs"""
@@ -184,8 +184,7 @@ class Node(QObject):
         output = self.getNodeOutput(uuid)
         if output is not None:
             return self._generateOutput(output)
-        else:
-            return None
+        return None
 
     def _generateOutput(self, node_output: NodeInputOutput) -> NodeValue:
         """
@@ -193,18 +192,18 @@ class Node(QObject):
 
         Derived class should implement this for all node outputs.
         """
+        assertRef(node_output)
         return NodeValue.NoValue()
 
     def addConnection(self, uuid: UUID, src: Node, src_uuid: UUID) -> bool:
         """Add new connection between this node intput and another node output."""
-        assert (uuid)
-        assert (src)
-        assert (src_uuid)
+        assertRef(uuid)
+        assertRef(src)
+        assertRef(src_uuid)
 
         if self.getConnection(uuid):
             print("Connection rejected, connection already exists for this input")
             return False
-        
         con = NodeConnection(src, src_uuid, self, uuid)
         self.__connections.append(con)
         self.connectionAdded.emit(con)
