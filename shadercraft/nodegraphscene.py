@@ -16,15 +16,21 @@ class NodeGraphScene(QGraphicsScene):
         """Default constructor"""
         super().__init__()
         self.__nodes: list[Node] = []
+        self.__names: list[str] = []
+        self.__names_lookup: dict[str, int] = {}
         self.__addTestNodes()
         self.__pinDragDropSource: Optional[NodePin] = None
         self.__pinDragDropTarget: Optional[NodePin] = None
 
     def addNode(self, node: Node) -> None:
-        """Add node to this node graph"""
+        """
+        Add node to this node graph.
+        Added node will be renamed if needed to ensure name uniquness.
+        """
         assert (node is not None)
         assert (node not in self.__nodes)
 
+        self.assignNodeName(node)
         self.__nodes.append(node)
         node.connectionAdded.connect(self.onNodeConnectionAdded)
         node.connectionRemoved.connect(self.OnNodeConnectionRemoved)
@@ -171,3 +177,17 @@ class NodeGraphScene(QGraphicsScene):
         assert (connection)
         assert (connection.getWidget())
         self.removeItem(connection.getWidget())
+
+    def assignNodeName(self, node: Node) -> str:
+        """Generates unqiue node name"""
+        if not node.name in self.__names:
+            self.__names_lookup[node.name] = 0
+            self.__names.append(node.name)
+            return node.name
+        else:
+            self.__names_lookup[node.name] += 1
+            name = f"{node.name}_{self.__names_lookup[node.name]}"
+            self.__names.append(name)
+            node.name = name
+            return name
+            
