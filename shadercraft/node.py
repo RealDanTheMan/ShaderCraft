@@ -10,14 +10,6 @@ from .node_widget import NodeWidget
 from .asserts import assertRef
 
 
-class NodeParameterValue(Enum):
-    NO_VALUE = 0
-    FLOAT = 1
-    FLOAT2 = 2
-    FLOAT3 = 3
-    FLOAT4 = 4
-
-
 @dataclass
 class NodeValue:
     """
@@ -39,25 +31,24 @@ class NodeValue:
 
 
 @dataclass
-class NodeInputOutput:
+class NodeIO:
     """
     Class representing node inputs or outputs.
     Inputs and outputs is how we can connection nodes and build logic.
     """
+
     def __init__(self):
         self.uuid: UUID = uuid1()
         self.name: str = None
         self.label: str = None
-        self.value_type: NodeParameterValue = NodeParameterValue.NO_VALUE
 
     @staticmethod
-    def create(name: str, label: str, value: NodeParameterValue) -> NodeInputOutput:
+    def create(name: str, label: str) -> NodeIO:
         """Shorthand function for creating node input/outputs"""
-        inout = NodeInputOutput()
+        inout = NodeIO()
         inout.uuid = uuid1()
         inout.name = name
         inout.label = label
-        inout.value_type = value
         return inout
 
 
@@ -126,11 +117,11 @@ class Node(QObject):
         self.posx: float = 0.0
         self.posy: float = 0.0
 
-        self.__outputs: dict[UUID, NodeInputOutput] = {}
-        self.__inputs: dict[UUID, NodeInputOutput] = {}
+        self.__outputs: dict[UUID, NodeIO] = {}
+        self.__inputs: dict[UUID, NodeIO] = {}
         self.__connections: list[NodeConnection] = []
 
-    def _registerInput(self, node_input: NodeInputOutput) -> NodeInputOutput:
+    def _registerInput(self, node_input: NodeIO) -> NodeIO:
         assertRef(node_input)
         assertRef(node_input.uuid)
         if node_input.uuid in self.__inputs:
@@ -139,7 +130,7 @@ class Node(QObject):
         self.__inputs[node_input.uuid] = node_input
         return self.__inputs[node_input.uuid]
 
-    def _registerOutput(self, node_output: NodeInputOutput) -> NodeInputOutput:
+    def _registerOutput(self, node_output: NodeIO) -> NodeIO:
         assertRef(node_output)
         assertRef(node_output.uuid)
         if node_output.uuid in self.__outputs:
@@ -148,14 +139,14 @@ class Node(QObject):
         self.__outputs[node_output.uuid] = node_output
         return self.__outputs[node_output.uuid]
 
-    def getNodeInput(self, uuid: UUID) -> Optional[NodeInputOutput]:
+    def getNodeInput(self, uuid: UUID) -> Optional[NodeIO]:
         """Get node input which matches given UUID"""
         assertRef(uuid)
         if uuid not in self.__inputs:
             return None
         return self.__inputs[uuid]
 
-    def getNodeInputs(self) -> list[NodeInputOutput]:
+    def getNodeInputs(self) -> list[NodeIO]:
         """Get list of all node inputs"""
         return list(self.__inputs.values())
 
@@ -176,19 +167,19 @@ class Node(QObject):
             return self._generateInputValue(node_in)
         return None
 
-    def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
+    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
         """Generate default input value for given input property of the node"""
         assertRef(node_input)
         return NodeValue.noValue()
 
-    def getNodeOutput(self, uuid: UUID) -> Optional[NodeInputOutput]:
+    def getNodeOutput(self, uuid: UUID) -> Optional[NodeIO]:
         """Get node output which matches given UUID"""
         assertRef(uuid)
         if uuid not in self.__outputs:
             return None
         return self.__outputs[uuid]
 
-    def getNodeOutputs(self) -> list[NodeInputOutput]:
+    def getNodeOutputs(self) -> list[NodeIO]:
         """Get list of all node outputs"""
         return list(self.__outputs.values())
 
@@ -199,7 +190,7 @@ class Node(QObject):
             return self._generateOutput(output)
         return None
 
-    def _generateOutput(self, node_output: NodeInputOutput) -> NodeValue:
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
         """
         Generates output value for given node output.
 
@@ -230,7 +221,7 @@ class Node(QObject):
                 return con
         return None
 
-    def getConnectionFromInput(self, node_in: NodeInputOutput) -> Optional[NodeConnection]:
+    def getConnectionFromInput(self, node_in: NodeIO) -> Optional[NodeConnection]:
         """Get connection on this node given input on this node forms traget of the connection"""
         for con in self.__connections:
             if con.target_uuid == node_in.uuid:

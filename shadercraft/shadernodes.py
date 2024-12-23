@@ -2,7 +2,7 @@ from __future__ import annotations
 from uuid import UUID
 
 from .asserts import assertRef
-from .node import Node, NodeParameterValue, NodeValue, NodeInputOutput
+from .node import Node, NodeValue, NodeIO
 
 
 class ShaderNodeBase(Node):
@@ -35,19 +35,19 @@ class FloatShaderNode(ShaderNodeBase):
         self.label = "Shader Float"
         self.default_input_val: float = 0.0
 
-        self.float_input = NodeInputOutput.create("FloatInput", "Float In", NodeParameterValue.FLOAT)
+        self.float_input = NodeIO.create("FloatInput", "Float In")
         self._registerInput(self.float_input)
 
-        self.float_output = NodeInputOutput.create("FloatOutput", "Float Out", NodeParameterValue.FLOAT)
+        self.float_output = NodeIO.create("FloatOutput", "Float Out")
         self._registerOutput(self.float_output)
 
-    def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
+    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
         """Generate default input value for non connected inputs"""
         if node_input is self.float_input:
             return NodeValue(str, f"{self.default_input_val}")
         return NodeValue.noValue()
 
-    def _generateOutput(self, node_output: NodeInputOutput) -> NodeValue:
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
         """Generate value for given node output property"""
         if node_output is self.float_output:
             return NodeValue(str, f"{self.name}_{self.float_output.name}")
@@ -77,21 +77,21 @@ class MulShaderNode(ShaderNodeBase):
         self._def_input_b = 1.0
 
         # Node inputs
-        self.input_a = NodeInputOutput.create("MulInputA", "Value A", NodeParameterValue.FLOAT)
+        self.input_a = NodeIO.create("MulInputA", "Value A")
         self._registerInput(self.input_a)
-        self.input_b = NodeInputOutput.create("MulInputB", "Value B", NodeParameterValue.FLOAT)
+        self.input_b = NodeIO.create("MulInputB", "Value B")
         self._registerInput(self.input_b)
 
         # Node output
-        self.float_output = NodeInputOutput.create("MulOutput", "Value", NodeParameterValue.FLOAT)
+        self.float_output = NodeIO.create("MulOutput", "Value")
         self._registerOutput(self.float_output)
 
-    def _generateOutput(self, node_output: NodeInputOutput) -> NodeValue:
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
         if node_output is self.float_output:
             return NodeValue(str, f"{self.name}_{self.float_output.name}")
         return NodeValue.noValue()
 
-    def _generateInputValue(self, node_input: NodeInputOutput) -> NodeValue:
+    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
         if node_input is self.input_a:
             return NodeValue(str, f"{self._def_input_a}f")
         if node_input is self.input_b:

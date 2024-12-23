@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID, uuid1
 
 import PySide6
-from .node import Node, NodeConnection, NodeInputOutput
+from .node import Node, NodeConnection, NodeIO
 from .node_widget import NodeWidget, NodePin
 from .shadernodes import FloatShaderNode, MulShaderNode
 from .asserts import assertRef, assertFalse, assertTrue
@@ -167,13 +167,10 @@ class NodeGraphScene(QGraphicsScene):
             print("Connection cancelled, could not resolve node from pins")
             return False
 
-        node_in: Optional[NodeInputOutput] = inode.getNodeInput(pinin.uuid)
-        node_out: Optional[NodeInputOutput] = onode.getNodeOutput(pinout.uuid)
+        node_in: Optional[NodeIO] = inode.getNodeInput(pinin.uuid)
+        node_out: Optional[NodeIO] = onode.getNodeOutput(pinout.uuid)
         if node_in is None or node_out is None:
             print("Connection cancelled, failed to resolve node inputs/outputs")
-            return False
-        if node_in.value_type is not node_out.value_type:
-            print("Connection cancelled, input/output does not have common value type")
             return False
 
         inode.addConnection(node_in.uuid, onode, node_out.uuid)
