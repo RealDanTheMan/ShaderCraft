@@ -6,6 +6,8 @@ from PySide6.QtGui import QPainter, QColor, QMouseEvent
 from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal, QObject, Slot
 
+from .asserts import assertRef, assertTrue
+
 
 class NodeWidget(QObject, QGraphicsItem):
     positionChanged = Signal(QPointF)
@@ -76,28 +78,31 @@ class NodeWidget(QObject, QGraphicsItem):
         self.labelText = text
 
     def addInputs(self, ids: list[UUID]) -> None:
-        for id in ids:
+        """Add node input pins"""
+        for input_id in ids:
             pin = NodePin()
-            pin.uuid = id
+            pin.uuid = input_id
             pin.node_uuid = self.uuid
-            pin.role = NodePin.Role.EInput
+            pin.role = NodePin.Role.INPUT
             pin.setParentItem(self)
             self.__inputPins.append(pin)
         self.updateLayout()
 
     def addOutputs(self, ids: list[UUID]) -> None:
-        for id in ids:
+        """Add node output pins"""
+        for output_id in ids:
             pin = NodePin()
-            pin.uuid = id
+            pin.uuid = output_id
             pin.node_uuid = self.uuid
-            pin.role = NodePin.Role.EOutput
+            pin.role = NodePin.Role.OUTPUT
             pin.setParentItem(self)
             pin.mouseDragBegin.connect(self.onPinDragBegin)
-            pin.mouseDragEnd.connect(self.OnPinDragEnd)
+            pin.mouseDragEnd.connect(self.onPinDragEnd)
             self.__outputPins.append(pin)
         self.updateLayout()
 
     def updateLayout(self):
+        """Regenerate this node widget layout"""
         pin_padding = 6
         offset = self.labelHeight + pin_padding
         for pin in self.__inputPins:
@@ -126,21 +131,27 @@ class NodeWidget(QObject, QGraphicsItem):
 
     @Slot(QObject)
     def onPinDragBegin(self, pin: QObject) -> None:
-        assert (isinstance(pin, NodePin))
+        """Event handler invoked when node pin begins to be dragged by mouse pointer"""
+        assertTrue(isinstance(pin, NodePin))
         print(f"Pin drag started -> Pin '{pin.getUUID()}'")
 
     @Slot(QObject)
-    def OnPinDragEnd(self, pin: QObject) -> None:
-        assert (isinstance(pin, NodePin))
+    def onPinDragEnd(self, pin: QObject) -> None:
+        """Event handler invoked when dragged pin is dropped"""
+        assertTrue(isinstance(pin, NodePin))
         print(f"Pin drag ended -> Pin '{pin.getUUID()}'")
 
 
 class NodePin(QObject, QGraphicsItem):
+    """
+    Class encapsulating custin graphics widget representing node pin.
+    Node pins can be dragged over pins of other nodes to form connections.
+    """
     class Role(Enum):
-        ENone = 0
-        EInput = 1
-        EOutput = 2
-
+        """Enum class representing pin role"""
+        NONE = 0
+        INPUT = 1
+        OUTPUT = 2
 
     mouseDragBegin = Signal(QObject)
     mouseDragEnd = Signal(QObject)
@@ -150,20 +161,20 @@ class NodePin(QObject, QGraphicsItem):
         QObject.__init__(self, None)
         QGraphicsItem.__init__(self, None)
 
-        self.role: NodePin.Role = NodePin.Role.ENone
+        self.role: NodePin.Role = NodePin.Role.NONE
         self.setAcceptHoverEvents(True)
         self.setAcceptDrops(True)
         self.radius: int = 6
         self.foreground: QColor = QColor(0, 200, 0)
-        self.foregroundHighlight: QColor = QColor(200, 0, 100)
+        self.foreground_hover: QColor = QColor(200, 0, 100)
         self.uuid: UUID = uuid1()
         self.node_uuid: UUID = None
-        self.__activeColor: QColor = self.foreground
+        self.__current_color: QColor = self.foreground
 
     def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = ...) -> None:
         """Draw this pin to the screen"""
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(self.__activeColor)
+        painter.setBrush(self.__current_color)
         painter.drawEllipse(0, 0, self.radius*2, self.radius*2)
 
     def boundingRect(self) -> QRectF:
@@ -180,32 +191,26 @@ class NodePin(QObject, QGraphicsItem):
 
     def hoverEnterEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when the mouse pointer entered pin area"""
-        self.__activeColor = self.foregroundHighlight
+        self.__current_color = self.foreground_hover
         super().hoverEnterEvent(event)
 
     def hoverLeaveEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when the mouse pointer leaves pin area"""
-        self.__activeColor = self.foreground
+        self.__current_color = self.foreground
         super().hoverLeaveEvent(event)
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when the mouse button is pressed while over the pin area"""
-        #print("mouse press event")
+        assertRef(event)
         self.mouseDragBegin.emit(self)
-        #super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when the mouse button is release while over the pin area"""
-        #print("mouse release event")
+        assertRef(event)
         self.mouseDragEnd.emit(self)
-        #super().mouseReleaseEvent(event)
-
-    def mouseMoveEvent(self, event: QMouseEvent) -> None:
-        """Event handler invoked when them mouse pointer changes location wile button is pressed"""
-        #print("Mouse move event")
-        #super().mouseMoveEvent(event)
 
     def getSceneCenterPos(self) -> QPointF:
+        """Get position of the center of the pin in scene coordinates"""
         x = self.scenePos().x() + float(self.radius)
         y = self.scenePos().y() + float(self.radius)
         return QPointF(x, y)

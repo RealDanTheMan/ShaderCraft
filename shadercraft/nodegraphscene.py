@@ -134,11 +134,11 @@ class NodeGraphScene(QGraphicsScene):
             self.resetPinDragDrop()
             return
 
-        if a.role is not NodePin.Role.EOutput:
+        if a.role is not NodePin.Role.OUTPUT:
             print("Aborting pin drag & drop: source pin is not of output type")
             return
 
-        if b.role is not NodePin.Role.EInput:
+        if b.role is not NodePin.Role.INPUT:
             print("Aborting pin drag & drop: target pin is not of input type")
             return
 
