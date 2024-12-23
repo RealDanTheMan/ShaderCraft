@@ -1,2 +1,2 @@
-from .app import Main
-Main()
+from .app import main
+main()

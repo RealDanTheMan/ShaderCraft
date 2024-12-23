@@ -3,7 +3,8 @@ from PySide6.QtWidgets import QApplication
 from .appwindow import AppWindow
 
 
-def Main() -> int:
+def main() -> int:
+    """Main entry point to the application"""
     print('Starting Shadercraft')
 
     app = QApplication(sys.argv)
@@ -12,4 +13,3 @@ def Main() -> int:
     window.show()
 
     sys.exit(app.exec())
-
