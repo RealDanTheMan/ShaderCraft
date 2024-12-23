@@ -24,6 +24,51 @@ class ShaderNodeBase(Node):
         return ""
 
 
+class OutputShaderNode(ShaderNodeBase):
+    """
+    Output shader node is the final node in the graph tree.
+    Final shader code for current graph is generated from this node and
+    any nodes down stream from this node.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self.name = "OutputNode"
+        self.label = "Output"
+
+        # Default input values
+        self.def_albedo = 1.0
+        self.def_alpha = 1.0
+
+        # Node input properties
+        self.albedo_input = NodeIO.create("Albedo", "Albedo")
+        self._registerInput(self.albedo_input)
+
+        self.alpha_input = NodeIO.create("Alpha", "Alpha")
+        self._registerInput(self.alpha_input)
+
+    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
+        if node_input is self.albedo_input:
+            return NodeValue(str, f"{self.def_albedo}")
+        if node_input is self.alpha_input:
+            return NodeValue(str, f"{self.def_alpha}")
+        return NodeValue.noValue()
+
+    def generateShaderCode(self) -> str:
+        """Generate shader code for this node"""
+        albedo_value: NodeValue = self.getNodeInputValue(self.albedo_input.uuid)
+        alpha_value: NodeValue = self.getNodeInputValue(self.alpha_input.uuid)
+        assertRef(albedo_value)
+        assertRef(alpha_value)
+
+        src: str = f"""
+        float albedo = {albedo_value.value}
+        float alpha = {alpha_value.value}
+        """
+
+        return src
+
+
 class FloatShaderNode(ShaderNodeBase):
     """
     Float shader is a simple node that defines shader float variable.
@@ -60,6 +105,7 @@ class FloatShaderNode(ShaderNodeBase):
 
         src: str = f"float  {self.name}_{self.float_output.name} = {input_val.value}f;"
         return src
+
 
 
 class MulShaderNode(ShaderNodeBase):

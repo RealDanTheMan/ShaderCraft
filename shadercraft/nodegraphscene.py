@@ -5,7 +5,7 @@ from uuid import UUID, uuid1
 import PySide6
 from .node import Node, NodeConnection, NodeIO
 from .node_widget import NodeWidget, NodePin
-from .shadernodes import FloatShaderNode, MulShaderNode
+from .shadernodes import FloatShaderNode, MulShaderNode, OutputShaderNode
 from .asserts import assertRef, assertFalse, assertTrue
 from PySide6.QtWidgets import QGraphicsScene
 from PySide6.QtGui import QMouseEvent
@@ -49,14 +49,17 @@ class NodeGraphScene(QGraphicsScene):
         node0 = MulShaderNode()
         node1 = FloatShaderNode()
         node2 = FloatShaderNode()
+        node3 = OutputShaderNode()
 
         self.addNode(node0)
         self.addNode(node1)
         self.addNode(node2)
+        self.addNode(node3)
 
         node0.setPosition(-200, 200)
         node1.setPosition(300, -100)
         node2.setPosition(0, 0)
+        node3.setPosition(500, 0)
 
     def getAllNodes(self) -> list[Node]:
         """Get list of all nodes present in the graph"""
