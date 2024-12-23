@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import Optional
+from functools import wraps
 from uuid import UUID, uuid1
 from enum import Enum
 from PySide6.QtCore import QObject, QPointF, Slot, Signal
@@ -107,41 +108,41 @@ class Node(QObject):
         self.posx: float = 0.0
         self.posy: float = 0.0
 
-        self.__outputs: list[NodeInputOutput] = []
-        self.__inputs: list[NodeInputOutput] = []
+        self.__outputs: dict[UUID, NodeInputOutput] = {}
+        self.__inputs: dict[UUID, NodeInputOutput] = {}
         self.__connections: list[NodeConnection] = []
 
-    def _addOutput(self, name: str, label: str, type: NodeParameterValue) -> NodeInputOutput:
-        """Add new value output for this node"""
-        assert (name is not None)
-        assert (label is not None)
-        assert (type is not NodeParameterValue.NoValue)
+    def _registerInput(self, node_input: NodeInputOutput) -> NodeInputOutput:
+        assert (node_input is not None)
+        assert (node_input.uuid is not None)
+        if node_input.uuid in self.__inputs:
+            raise ValueError("Node input with matching UUID already exists!")
 
-        node_out = NodeInputOutput.create(name, label, type)
-        self.__outputs.append(node_out)
-        return node_out
+        self.__inputs[node_input.uuid] = node_input
+        return self.__inputs[node_input.uuid]
 
-    def _addInput(self, name: str, label: str, type: NodeParameterValue) -> NodeInputOutput:
-        """Add new value input for this node"""
-        assert (name is not None)
-        assert (label is not None)
-        assert (type is not NodeParameterValue.NoValue)
 
-        node_in = NodeInputOutput.create(name, label, type)
-        self.__inputs.append(node_in)
-        return node_in
+    def _registerOutput(self, node_output: NodeInputOutput) -> NodeInputOutput:
+        assert (node_output is not None)
+        assert (node_output.uuid is not None)
+        if node_output.uuid in self.__outputs:
+            raise ValueError("Node output with matching UUID already exists!")
+
+        self.__outputs[node_output.uuid] = node_output
+        return self.__outputs[node_output.uuid]
+        
 
     def getNodeInput(self, uuid: UUID) -> Optional[NodeInputOutput]:
         """Get node input which matches given UUID"""
         assert (uuid is not None)
-        for input in self.__inputs:
-            if input.uuid == uuid:
-                return input
-        return None
-
+        if not uuid in self.__inputs:
+            return None
+        else:
+            return self.__inputs[uuid]
+        
     def getNodeInputs(self) -> list[NodeInputOutput]:
         """Get list of all node inputs"""
-        return list(self.__inputs)
+        return list(self.__inputs.values())
 
     def getNodeInputValue(self, uuid: UUID) -> Optional[NodeValue]:
         """
@@ -168,14 +169,15 @@ class Node(QObject):
 
     def getNodeOutput(self, uuid: UUID) -> Optional[NodeInputOutput]:
         """Get node output which matches given UUID"""
-        for output in self.__outputs:
-            if output.uuid == uuid:
-                return output
-        return None
+        assert (uuid is not None)
+        if not uuid in self.__outputs:
+            return None
+        else:
+            return self.__outputs[uuid]
 
     def getNodeOutputs(self) -> list[NodeInputOutput]:
         """Get list of all node outputs"""
-        return list(self.__outputs)
+        return list(self.__outputs.values())
 
     def getNodeOutputValue(self, uuid: UUID) -> Optional[NodeValue]:
         """Get value for node output matching given UUID"""
@@ -227,8 +229,8 @@ class Node(QObject):
         """Create widget object representing this node"""
         self.widget = NodeWidget()
         self.widget.setLabelText(self.label)
-        self.widget.addInputs([i.uuid for i in self.__inputs])
-        self.widget.addOutputs([i.uuid for i in self.__outputs])
+        self.widget.addInputs(list(self.__inputs.keys()))
+        self.widget.addOutputs(list(self.__outputs.keys()))
         self.widget.positionChanged.connect(self.onWidgetPositionChanged)
 
     def getWidget(self) -> NodeWidget:
