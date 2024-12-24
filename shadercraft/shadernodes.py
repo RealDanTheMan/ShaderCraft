@@ -1,5 +1,5 @@
 from __future__ import annotations
-from uuid import UUID
+import textwrap
 
 from .asserts import assertRef
 from .node import Node, NodeValue, NodeIO
@@ -22,6 +22,20 @@ class ShaderNodeBase(Node):
         Every shader node type must implement this method.
         """
         return ""
+
+    def generateShaderCodeSummary(self) -> str:
+        """
+        Get summary for this shader node in a comment block format.
+        """
+        summary: str = f"""
+        /// -------------------------------------------------------------------
+        /// Node Class: {type(self)}
+        /// Node Label: {self.label}
+        /// Node Name: {self.name}
+        /// Node UUID: {self.uuid}
+        ///--------------------------------------------------------------------
+        """
+        return textwrap.dedent(summary).strip()
 
 
 class OutputShaderNode(ShaderNodeBase):
@@ -66,7 +80,7 @@ class OutputShaderNode(ShaderNodeBase):
         float alpha = {alpha_value.value}
         """
 
-        return src
+        return textwrap.dedent(src).strip()
 
 
 class FloatShaderNode(ShaderNodeBase):
@@ -104,7 +118,7 @@ class FloatShaderNode(ShaderNodeBase):
         assertRef(input_val)
 
         src: str = f"float  {self.name}_{self.float_output.name} = {input_val.value}f;"
-        return src
+        return src.strip()
 
 
 
@@ -158,5 +172,4 @@ class MulShaderNode(ShaderNodeBase):
         float {self.name}_{self.float_output.name} = {self.input_a.name} * {self.input_b.name};
 
         """
-        return src
-
+        return textwrap.dedent(src).strip()

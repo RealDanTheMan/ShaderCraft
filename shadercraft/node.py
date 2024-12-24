@@ -254,3 +254,16 @@ class Node(QObject):
         if self.widget:
             self.widget.setPos(QPointF(x, y))
         self.positionChanged.emit(QPointF(x, y))
+
+    def getDownstreamNodes(self) -> list[Node]:
+        """Recursively gets list of this node down stream descendants"""
+        nodes: list[Node] = []
+        for node_in in self.getNodeInputs():
+            con: Optional[NodeConnection] = self.getConnectionFromInput(node_in)
+            if con:
+                child_nodes: list[Node] = con.source.getDownstreamNodes()
+                nodes.extend(child_nodes)
+        nodes.append(self)
+        nodes = list(set(nodes))
+        nodes.reverse
+        return nodes

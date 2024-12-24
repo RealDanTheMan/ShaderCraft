@@ -1,7 +1,9 @@
 from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QMainWindow
 from PySide6.QtCore import Qt
 
-from .shadernodes import ShaderNodeBase
+from .asserts import assertTrue
+from .node import Node
+from .shadernodes import OutputShaderNode, ShaderNodeBase
 from .windowbase import Ui_MainWindow
 from .nodegraphscene import NodeGraphScene
 from .nodegraphview import NodeGraphView
@@ -35,10 +37,21 @@ class AppWindow(QMainWindow):
         For the time being we simply dump the shader code to the console.
         """
         print("Generating shader code")
-        
-        for node in self.graph_scene.getAllNodes():
-            if isinstance(node, ShaderNodeBase):
-                shader_src = node.generateShaderCode()
-                print(shader_src)
+        output_nodes: OutputShaderNode = self.graph_scene.getAllNodeOfClass(OutputShaderNode)
+        if output_nodes is None:
+            print("Attempting to generate shader code with no output node in the scene, aborting.")
+            return
+        assertTrue(len(output_nodes) == 1)
+        output_node: Node = output_nodes[0]
+        shader_nodes: list[Node] = output_node.getDownstreamNodes()
+
+        print(f"Shader code generation found {len(shader_nodes)} nodes")
+        for node in shader_nodes:
+            assertTrue(isinstance(node, ShaderNodeBase))
+            shader_summary: str = node.generateShaderCodeSummary()
+            shader_src: str = node.generateShaderCode()
+            print(shader_summary)
+            print(shader_src)
+            print("\r\n")
 
         print("Done")

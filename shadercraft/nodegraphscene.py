@@ -65,6 +65,14 @@ class NodeGraphScene(QGraphicsScene):
         """Get list of all nodes present in the graph"""
         return list(self.__nodes)
 
+    def getAllNodeOfClass(self, cls) -> list[Node]:
+        """Get List of all nodes present in the graph that match given class type"""
+        nodes: list[Node] = []
+        for node in self.__nodes:
+            if isinstance(node, cls):
+                nodes.append(node)
+        return nodes
+
     def getNodeFromWidget(self, widget: NodeWidget) -> Optional[Node]:
         """Get handle to the node linked to given node widget"""
 
