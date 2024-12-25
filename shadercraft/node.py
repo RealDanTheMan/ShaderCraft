@@ -1,6 +1,7 @@
 from __future__ import annotations
 from typing import Optional
 from dataclasses import dataclass
+from collections import OrderedDict
 from uuid import UUID, uuid1
 from enum import Enum
 from PySide6.QtCore import QObject, QPointF, Slot, Signal
@@ -264,6 +265,6 @@ class Node(QObject):
                 child_nodes: list[Node] = con.source.getDownstreamNodes()
                 nodes.extend(child_nodes)
         nodes.append(self)
-        nodes = list(set(nodes))
+        nodes = list(OrderedDict.fromkeys(nodes))
         nodes.reverse
         return nodes

@@ -45,7 +45,6 @@ class AppWindow(QMainWindow):
         output_node: Node = output_nodes[0]
         shader_nodes: list[Node] = output_node.getDownstreamNodes()
 
-        print(f"Shader code generation found {len(shader_nodes)} nodes")
         for node in shader_nodes:
             assertTrue(isinstance(node, ShaderNodeBase))
             shader_summary: str = node.generateShaderCodeSummary()
