@@ -11,6 +11,7 @@ class ShaderNodeBase(Node):
     Shader nodes are graph nodes that can be connected together to generate
     shader code used to compile shaders.
     """
+    label = "Shader Node"
 
     def __init__(self) -> None:
         super().__init__()
@@ -44,11 +45,11 @@ class OutputShaderNode(ShaderNodeBase):
     Final shader code for current graph is generated from this node and
     any nodes down stream from this node.
     """
+    label = "Output Node"
 
     def __init__(self):
         super().__init__()
         self.name = "OutputNode"
-        self.label = "Output"
 
         # Default input values
         self.def_albedo = 1.0
@@ -87,6 +88,7 @@ class FloatShaderNode(ShaderNodeBase):
     """
     Float shader is a simple node that defines shader float variable.
     """
+    label = "Float Node"
 
     def __init__(self) -> None:
         super().__init__()
@@ -126,6 +128,7 @@ class MulShaderNode(ShaderNodeBase):
     """
     Mull shader node performs multiplication of two input values and outputs result.
     """
+    label = "Mul Node"
 
     def __init__(self) -> None:
         super().__init__()

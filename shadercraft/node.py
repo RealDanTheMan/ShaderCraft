@@ -104,6 +104,7 @@ class Node(QObject):
     Nodes can be added to the node graph scene and connected via their input/output to
     produce logic.
     """
+    label: str = "Node Label"
     connectionAdded = Signal(NodeConnection)
     connectionRemoved = Signal(NodeConnection)
     positionChanged = Signal(QPointF)
@@ -111,7 +112,6 @@ class Node(QObject):
     def __init__(self) -> None:
         QObject.__init__(self, None)
 
-        self.label: str = "Node Label"
         self.name: str = "Node_Name"
         self.uuid: UUID = uuid1()
         self.widget: NodeWidget = None
