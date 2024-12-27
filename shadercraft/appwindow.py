@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QMainWindow, QVBoxLayout
 from PySide6.QtCore import Qt
 
-from .asserts import assertTrue
+from .asserts import assertTrue, assertRef
 from .node import Node
 from .shadernodes import OutputShaderNode, ShaderNodeBase, FloatShaderNode, MulShaderNode
 from .windowbase import Ui_MainWindow
@@ -16,27 +16,16 @@ class AppWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
-        # Create and setup node graph viewport
-        self.graph_view: NodeGraphView = NodeGraphView()
-        self.graph_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.graph_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.graph_view.setDragMode(QGraphicsView.NoDrag)
-        self.ui.NodeGraphFrame.layout().addWidget(self.graph_view)
-
+        self._initGraph()
+        self._initScene()
         self._initPalette()
-
-        self.graph_scene: NodeGraphScene = NodeGraphScene()
-        self.graph_view.setScene(self.graph_scene)
-        self.graph_view.update()
-        asp = self.graph_view.rect().width() / self.graph_view.rect().height()
-        self.graph_view.setSceneRect(0, 0, 2000, 2000/asp)
- 
         self.ui.actionGenerate_Shader_Code.triggered.connect(self.onGenerateShaderCode)
 
     def _initPalette(self) -> None:
         """
-        Create and initialise node palatte panel
+        Create and initialise node palatte panel.
         """
+        assertRef(self.ui.PaletteFrame)
         self.palette_widget: NodePaletteWidget = NodePaletteWidget(self)
         self.ui.PaletteFrame.setLayout(QVBoxLayout())
         self.ui.PaletteFrame.layout().addWidget(self.palette_widget)
@@ -48,6 +37,29 @@ class AppWindow(QMainWindow):
         ])
 
         self.palette_widget.refresh()
+
+    def _initGraph(self) -> None:
+        """
+        Create and setup node graph view.
+        """
+        self.graph_view: NodeGraphView = NodeGraphView()
+        self.graph_view.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.graph_view.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.graph_view.setDragMode(QGraphicsView.NoDrag)
+
+        assertRef(self.ui.NodeGraphFrame)
+        self.ui.NodeGraphFrame.layout().addWidget(self.graph_view)
+
+    def _initScene(self) -> None:
+        """
+        Create and setup node graph scene.
+        """
+        assertRef(self.graph_view)
+        self.graph_scene: NodeGraphScene = NodeGraphScene()
+        self.graph_view.setScene(self.graph_scene)
+        self.graph_view.update()
+        asp = self.graph_view.rect().width() / self.graph_view.rect().height()
+        self.graph_view.setSceneRect(0, 0, 2000, 2000/asp)
 
     def onGenerateShaderCode(self) -> None:
         """
