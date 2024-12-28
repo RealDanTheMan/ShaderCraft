@@ -242,6 +242,12 @@ class NodeGraphScene(QGraphicsScene):
             print("Connection cancelled, failed to resolve node inputs/outputs")
             return False
 
+        # Remove existing connection if one is present
+        excon: NodeConnection = inode.getConnectionFromInput(node_in)
+        if excon is not None:
+            inode.removeConnection(excon.uuid)
+
+        # Create new connection
         inode.addConnection(node_in.uuid, onode, node_out.uuid)
         return True
 
