@@ -224,6 +224,7 @@ class Node(QObject):
         if con is not None:
             print(f"Removing node connection: {uuid}")
             self.__connections.remove(con)
+            self.connectionRemoved.emit(con)
 
     def getConnection(self, uuid: UUID) -> Optional[NodeConnection]:
         """Get connection on this node that matches given UUID"""
