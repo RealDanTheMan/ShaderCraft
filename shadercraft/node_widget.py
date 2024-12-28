@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import Optional
 from enum import Enum
 from uuid import UUID, uuid1
-from PySide6.QtGui import QPainter, QColor, QMouseEvent
+from PySide6.QtGui import QPainter, QColor, QMouseEvent, QPen
 from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal, QObject, Slot
 
@@ -11,6 +11,7 @@ from .asserts import assertRef, assertTrue
 
 class NodeWidget(QObject, QGraphicsItem):
     positionChanged = Signal(QPointF)
+    selectionChanged = Signal(bool)
 
     def __init__(self) -> None:
         QObject.__init__(self, None)
@@ -28,6 +29,9 @@ class NodeWidget(QObject, QGraphicsItem):
         self.labelText = "Node"
         self.contentBackground = QColor(200, 200, 200)
         self.contentForeground = QColor(250, 250, 250)
+        self.border_color_idle: QColor = QColor(20, 20, 20)
+        self.border_color_selected: QColor = QColor(140, 50,50)
+        self.border_color: QColor = self.border_color_idle
         self.__inputPins: list[NodePin] = []
         self.__outputPins: list[NodePin] = []
 
@@ -47,6 +51,12 @@ class NodeWidget(QObject, QGraphicsItem):
         """Draws the entire widget"""
         painter.setRenderHint(QPainter.Antialiasing)
 
+        # Draw border around the node
+        pen:  QPen = QPen(self.border_color)
+        pen.setWidth(2)
+        painter.setPen(pen)
+        painter.drawRect(self.boundingRect())
+
         # Draw label area
         painter.setBrush(self.labelBackground)
         painter.drawRect(self.getLabelArea())
@@ -64,6 +74,13 @@ class NodeWidget(QObject, QGraphicsItem):
         """Override for handling internal widget changes"""
         if change == QGraphicsItem.ItemPositionChange:
             self.positionChanged.emit(self.scenePos())
+
+        if change == QGraphicsItem.ItemSelectedChange:
+            if value:
+                self.border_color = self.border_color_selected
+            else:
+                self.border_color = self.border_color_idle
+            self.selectionChanged.emit(value)
 
         return super().itemChange(change, value)
 

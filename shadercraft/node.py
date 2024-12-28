@@ -121,6 +121,7 @@ class Node(QObject):
         self.__outputs: dict[UUID, NodeIO] = {}
         self.__inputs: dict[UUID, NodeIO] = {}
         self.__connections: list[NodeConnection] = []
+        self.__selected: bool = False
 
     def _registerInput(self, node_input: NodeIO) -> NodeIO:
         assertRef(node_input)
@@ -260,6 +261,11 @@ class Node(QObject):
         self.posy = value.y()
         self.positionChanged.emit(QPointF(self.posx, self.posy))
 
+    @Slot(bool)
+    def onWidgetSelectionChanged(self, value: bool) -> None:
+        """Event handler invoked when the widget bound to this node changes its selection state"""
+        self.__selected = value
+
     def setPosition(self, x: float, y: float) -> None:
         """Upadate position of this node, will also update widget position"""
         self.posx = x
@@ -280,6 +286,10 @@ class Node(QObject):
         nodes = list(OrderedDict.fromkeys(nodes))
         nodes.reverse
         return nodes
+
+    def getSelectedStatate(self) -> bool:
+        """Get value indicating if this node is currently selected or not"""
+        return self.__selected
 
 
 @dataclass
