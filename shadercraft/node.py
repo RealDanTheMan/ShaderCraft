@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import Optional
+from typing import Optional, Type
 from dataclasses import dataclass
 from collections import OrderedDict
 from uuid import UUID, uuid1
@@ -8,7 +8,7 @@ from PySide6.QtCore import QObject, QPointF, Slot, Signal
 
 from .connection_widget import ConnectionWidget
 from .node_widget import NodeWidget
-from .asserts import assertRef
+from .asserts import assertRef, assertTrue
 
 
 @dataclass
@@ -268,3 +268,30 @@ class Node(QObject):
         nodes = list(OrderedDict.fromkeys(nodes))
         nodes.reverse
         return nodes
+
+
+@dataclass
+class NodeClassDesc:
+    """
+    Utility class for handling and passing around node class values.
+    """
+    label:str = None
+    node_type: Type[Node] = None
+
+    @staticmethod
+    def fromNodeClass(node_cls: Type[Node]) -> NodeClassDesc:
+        """Create node class desctiption based on given node type"""
+        assertRef(node_cls)
+        desc: NodeClassDesc = NodeClassDesc()
+        desc.label = node_cls.label
+        desc.node_type = node_cls
+        return desc
+
+    @staticmethod
+    def fromNode(node: Node) -> NodeClassDesc:
+        """Create node class description based on given node instance"""
+        assertRef(node)
+        assertTrue(isinstance(node, Node))
+        desc: NodeClassDesc = NodeClassDesc()
+        desc.label = node.label
+        desc.node_type = type(node)
