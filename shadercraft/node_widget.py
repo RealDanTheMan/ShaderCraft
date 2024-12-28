@@ -12,6 +12,7 @@ from .asserts import assertRef, assertTrue
 class NodeWidget(QObject, QGraphicsItem):
     positionChanged = Signal(QPointF)
     selectionChanged = Signal(bool)
+    depth_order: int = 100
 
     def __init__(self) -> None:
         QObject.__init__(self, None)
@@ -20,6 +21,7 @@ class NodeWidget(QObject, QGraphicsItem):
         self.uuid = uuid1()
         self.width: float = 128
         self.height: float = 128
+        self.setZValue(self.depth_order)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
@@ -164,6 +166,8 @@ class NodePin(QObject, QGraphicsItem):
     Class encapsulating custin graphics widget representing node pin.
     Node pins can be dragged over pins of other nodes to form connections.
     """
+    depth_order: int = NodeWidget.depth_order + 10
+
     class Role(Enum):
         """Enum class representing pin role"""
         NONE = 0
@@ -179,6 +183,7 @@ class NodePin(QObject, QGraphicsItem):
         QGraphicsItem.__init__(self, None)
 
         self.role: NodePin.Role = NodePin.Role.NONE
+        self.setZValue(self.depth_order)
         self.setAcceptHoverEvents(True)
         self.setAcceptDrops(True)
         self.radius: int = 6
