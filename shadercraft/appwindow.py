@@ -1,8 +1,9 @@
+from typing import Type
 from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QMainWindow, QVBoxLayout
 from PySide6.QtCore import Qt
 
 from .asserts import assertTrue, assertRef
-from .node import Node
+from .node import Node, NodeClassDesc
 from .shadernodes import OutputShaderNode, ShaderNodeBase, FloatShaderNode, MulShaderNode
 from .windowbase import Ui_MainWindow
 from .nodegraphscene import NodeGraphScene
@@ -36,6 +37,7 @@ class AppWindow(QMainWindow):
             OutputShaderNode
         ])
 
+        self.palette_widget.createNodeRequested.connect(self.onPaletteNodeRequested)
         self.palette_widget.refresh()
 
     def _initGraph(self) -> None:
@@ -60,6 +62,15 @@ class AppWindow(QMainWindow):
         self.graph_view.update()
         asp = self.graph_view.rect().width() / self.graph_view.rect().height()
         self.graph_view.setSceneRect(0, 0, 2000, 2000/asp)
+
+    def onPaletteNodeRequested(self, node_desc: NodeClassDesc) -> None:
+        """Event handler invoked when node palette panel requests node creation"""
+        print(f"Adding new '{node_desc.label}' node to the graph on palette request")
+        assertRef(node_desc)
+        assertTrue(node_desc.node_type)
+
+        node: Node = node_desc.node_type()
+        self.graph_scene.addNode(node)
 
     def onGenerateShaderCode(self) -> None:
         """
