@@ -44,6 +44,28 @@ class NodeGraphScene(QGraphicsScene):
         self.addItem(node.getWidget())
         print(f"NodeGraphScene: Adding new node -> {node.uuid}")
 
+    def deleteNode(self, node: Node) -> None:
+        """
+        Removes given node from the graph.
+        Any connection to or from the node will be removed as well.
+        """
+        assertTrue(node in self.__nodes, "Node does not exists within the node graph!")
+        print(f"Removing node from node graph: {node.uuid}")
+
+        # Remove active connections to given node
+        in_cons: list[NodeConnection] = self.getNodeDownstreamConnections(node)
+        out_cons: list[NodeConnection] = self.getNodeUpstreamConnections(node)
+        for con in in_cons + out_cons:
+            con.target.removeConnection(con.uuid)
+            if con.getWidget() is not None:
+                self.removeItem(con.getWidget())
+
+        # Remove the actual node
+        self.__nodes.remove(node)
+        if node.getWidget() is not None:
+            self.removeItem(node.getWidget())
+
+
     def __addTestNodes(self) -> None:
         """Create and add set of node to the scene, usefull for testing"""
         node0 = MulShaderNode()
@@ -100,6 +122,29 @@ class NodeGraphScene(QGraphicsScene):
         if match:
             return match[0]
         return None
+
+    def getNodeDownstreamConnections(self, node: Node) -> list[NodeConnection]:
+        """Get all incoming connections in the node graph from given node"""
+        assertRef(node)
+        assertTrue (node in self.__nodes)
+        return node.getAllConnections()
+
+    def getNodeUpstreamConnections(self, node: Node) -> list[NodeConnection]:
+        """Get all outgoing connections in the node graph to given node"""
+        assertRef(node)
+        assertTrue(node in self.__nodes)
+
+        connections: list[NodeConnection] = []
+        for inode in self.__nodes:
+            if inode.uuid is node.uuid:
+                continue
+            node_connections: list[NodeConnection] = inode.getAllConnections()
+            for con in node_connections:
+                if con.source.uuid is node.uuid:
+                    connections.append(con)
+
+        return connections
+
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when mouse button press happens inside the graph"""
