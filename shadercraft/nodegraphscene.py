@@ -9,7 +9,7 @@ from .shadernodes import FloatShaderNode, MulShaderNode, OutputShaderNode
 from .asserts import assertRef, assertFalse, assertTrue
 from PySide6.QtWidgets import QGraphicsScene
 from PySide6.QtGui import QMouseEvent
-from PySide6.QtCore import Signal, Slot
+from PySide6.QtCore import Signal, Slot, QObject
 
 
 class NodeGraphScene(QGraphicsScene):
@@ -25,7 +25,12 @@ class NodeGraphScene(QGraphicsScene):
         self.__names_lookup: dict[str, int] = {}
         self.__drag_pin: Optional[NodePin] = None
         self.__drop_pin: Optional[NodePin] = None
+        self.__selected_node: Optional[Node] = None
         self.__addTestNodes()
+
+    def getSelectedNode(self) -> Optional[Node]:
+        """Get currently selected node in the graph"""
+        return self.__selected_node
 
     def addNode(self, node: Node) -> None:
         """
@@ -37,6 +42,7 @@ class NodeGraphScene(QGraphicsScene):
 
         self.assignNodeName(node)
         self.__nodes.append(node)
+        node.selectionChanged.connect(self.onNodeSelectionChanged)
         node.connectionAdded.connect(self.onNodeConnectionAdded)
         node.connectionRemoved.connect(self.onNodeConnectionRemoved)
         if node.getWidget() is None:
@@ -65,6 +71,13 @@ class NodeGraphScene(QGraphicsScene):
         if node.getWidget() is not None:
             self.removeItem(node.getWidget())
 
+    def deleteSelectedNode(self) -> bool:
+        """Delete currently selected node in the graph scene"""
+        node: Optional[Node] = self.getSelectedNode()
+        if node is not None:
+            self.deleteNode(node)
+            return True
+        return False
 
     def __addTestNodes(self) -> None:
         """Create and add set of node to the scene, usefull for testing"""
@@ -243,6 +256,17 @@ class NodeGraphScene(QGraphicsScene):
         assertRef(connection)
         assertRef(connection.getWidget())
         self.removeItem(connection.getWidget())
+
+    def onNodeSelectionChanged(self, node: QObject, selected: bool) -> None:
+        """Event handler invoked when selection state changes on any of the nodes"""
+        assertRef(node)
+        assertTrue(isinstance(node, Node))
+        if selected:
+            print("Updating selected node")
+            self.__selected_node = node
+        elif node is self.__selected_node and not selected:
+            print("Clearing selected node")
+            self.__selected_node = None
 
     def assignNodeName(self, node: Node) -> str:
         """Generates unqiue node name"""

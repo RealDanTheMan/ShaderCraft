@@ -107,6 +107,7 @@ class Node(QObject):
     label: str = "Node Label"
     connectionAdded = Signal(NodeConnection)
     connectionRemoved = Signal(NodeConnection)
+    selectionChanged = Signal(QObject, bool)
     positionChanged = Signal(QPointF)
 
     def __init__(self) -> None:
@@ -249,6 +250,7 @@ class Node(QObject):
         self.widget.addInputs(list(self.__inputs.keys()))
         self.widget.addOutputs(list(self.__outputs.keys()))
         self.widget.positionChanged.connect(self.onWidgetPositionChanged)
+        self.widget.selectionChanged.connect(self.onWidgetSelectionChanged)
 
     def getWidget(self) -> NodeWidget:
         """Get handle to the widget representing this node"""
@@ -265,6 +267,7 @@ class Node(QObject):
     def onWidgetSelectionChanged(self, value: bool) -> None:
         """Event handler invoked when the widget bound to this node changes its selection state"""
         self.__selected = value
+        self.selectionChanged.emit(self, value)
 
     def setPosition(self, x: float, y: float) -> None:
         """Upadate position of this node, will also update widget position"""

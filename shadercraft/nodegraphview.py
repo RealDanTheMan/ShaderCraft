@@ -1,7 +1,10 @@
 from __future__ import annotations
-from PySide6.QtGui import QWheelEvent, QMouseEvent
+from PySide6.QtGui import QWheelEvent, QMouseEvent, QKeyEvent
 from PySide6.QtWidgets import QGraphicsView
 from PySide6.QtCore import QPointF, Qt
+
+from .asserts import assertRef, assertTrue
+from .nodegraphscene import NodeGraphScene
 
 
 class NodeGraphView(QGraphicsView):
@@ -19,10 +22,16 @@ class NodeGraphView(QGraphicsView):
         self.horizontalScrollBar().disconnect(self)
         self.setTransformationAnchor(QGraphicsView.ViewportAnchor.NoAnchor)
 
+        self.__scene: NodeGraphScene = None
         self._scale: float = 1.0
         self._scale_increment: float = 0.1
         self._pan_mode: bool = False
         self._pan_mouse_pos: QPointF = QPointF()
+
+    def setScene(self, scene: NodeGraphScene):
+        """Bind graphics scene to this view"""
+        self.__scene = scene
+        super().setScene(scene)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         """Event invoked when mouse wheel is scrolled"""
@@ -60,3 +69,11 @@ class NodeGraphView(QGraphicsView):
             self._pan_mouse_pos = event.position()
             return
         super().mouseMoveEvent(event)
+
+    def keyPressEvent(self, event: QKeyEvent) -> None:
+        """Event handler invoked when key is pressed while node graph is in focus"""
+        if event.key() == Qt.Key_Delete and self.__scene is not None:
+            print("Attempting to delete selected node")
+            self.__scene.deleteSelectedNode()
+            return
+        super().keyPressEvent(event)
