@@ -215,6 +215,14 @@ class Node(QObject):
 
         return True
 
+    def removeConnection(self, uuid: UUID) -> None:
+        """Remove node connection matching given UUID"""
+        assertRef(uuid)
+        con: NodeConnection = self.getConnection(uuid)
+        if con is not None:
+            print(f"Removing node connection: {uuid}")
+            self.__connections.remove(con)
+
     def getConnection(self, uuid: UUID) -> Optional[NodeConnection]:
         """Get connection on this node that matches given UUID"""
         for con in self.__connections:
@@ -228,6 +236,10 @@ class Node(QObject):
             if con.target_uuid == node_in.uuid:
                 return con
         return None
+
+    def getAllConnections(self) -> list[NodeConnection]:
+        """Get all input connection from this node"""
+        return list(self.__connections)
 
     def initWidget(self) -> None:
         """Create widget object representing this node"""
