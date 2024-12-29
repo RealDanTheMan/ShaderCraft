@@ -7,7 +7,7 @@ from enum import Enum
 from PySide6.QtCore import QObject, QPointF, Slot, Signal
 
 from .connection_widget import ConnectionWidget
-from .node_widget import NodeWidget
+from .node_widget import NodeProxyWidget
 from .asserts import assertRef, assertTrue
 
 
@@ -115,7 +115,7 @@ class Node(QObject):
 
         self.name: str = "Node_Name"
         self.uuid: UUID = uuid1()
-        self.widget: NodeWidget = None
+        self.widget: NodeProxyWidget = None
         self.posx: float = 0.0
         self.posy: float = 0.0
 
@@ -246,14 +246,14 @@ class Node(QObject):
 
     def initWidget(self) -> None:
         """Create widget object representing this node"""
-        self.widget = NodeWidget()
+        self.widget = NodeProxyWidget()
         self.widget.setLabelText(self.label)
         self.widget.addInputs(list(self.__inputs.keys()))
         self.widget.addOutputs(list(self.__outputs.keys()))
         self.widget.positionChanged.connect(self.onWidgetPositionChanged)
         self.widget.selectionChanged.connect(self.onWidgetSelectionChanged)
 
-    def getWidget(self) -> NodeWidget:
+    def getWidget(self) -> NodeProxyWidget:
         """Get handle to the widget representing this node"""
         return self.widget
 

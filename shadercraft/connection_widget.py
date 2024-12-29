@@ -6,7 +6,7 @@ from PySide6.QtWidgets import QGraphicsItem
 from PySide6.QtGui import QPainter, QPen
 
 from .asserts import assertRef
-from .node_widget import NodePin, NodeWidget
+from .node_widget import NodePin, NodeProxyWidget
 
 
 class ConnectionWidget(QObject, QGraphicsItem):
@@ -15,7 +15,7 @@ class ConnectionWidget(QObject, QGraphicsItem):
     Connection is represented by a line connecting two pins between two different nodes.
     """
     pin_radius: float = 6
-    depth_order: int = NodeWidget.depth_order - 10
+    depth_order: int = NodeProxyWidget.depth_order - 10
 
     def __init__(self, startpin: NodePin, endpin: NodePin, uuid: UUID = uuid1()) -> None:
         QObject.__init__(self, None)

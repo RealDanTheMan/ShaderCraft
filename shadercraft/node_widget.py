@@ -3,13 +3,13 @@ from typing import Optional
 from enum import Enum
 from uuid import UUID, uuid1
 from PySide6.QtGui import QPainter, QColor, QMouseEvent, QPen
-from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
+from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QGraphicsProxyWidget
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal, QObject, Slot
 
 from .asserts import assertRef, assertTrue
 
 
-class NodeWidget(QObject, QGraphicsItem):
+class NodeProxyWidget(QObject, QGraphicsItem):
     positionChanged = Signal(QPointF)
     selectionChanged = Signal(bool)
     depth_order: int = 100
@@ -166,7 +166,7 @@ class NodePin(QObject, QGraphicsItem):
     Class encapsulating custin graphics widget representing node pin.
     Node pins can be dragged over pins of other nodes to form connections.
     """
-    depth_order: int = NodeWidget.depth_order + 10
+    depth_order: int = NodeProxyWidget.depth_order + 10
 
     class Role(Enum):
         """Enum class representing pin role"""

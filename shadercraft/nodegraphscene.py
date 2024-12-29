@@ -4,7 +4,7 @@ from uuid import UUID, uuid1
 
 import PySide6
 from .node import Node, NodeConnection, NodeIO
-from .node_widget import NodeWidget, NodePin
+from .node_widget import NodeProxyWidget, NodePin
 from .shadernodes import FloatShaderNode, MulShaderNode, OutputShaderNode
 from .asserts import assertRef, assertFalse, assertTrue
 from PySide6.QtWidgets import QGraphicsScene
@@ -108,7 +108,7 @@ class NodeGraphScene(QGraphicsScene):
                 nodes.append(node)
         return nodes
 
-    def getNodeFromWidget(self, widget: NodeWidget) -> Optional[Node]:
+    def getNodeFromWidget(self, widget: NodeProxyWidget) -> Optional[Node]:
         """Get handle to the node linked to given node widget"""
 
         assertRef(widget)
@@ -126,7 +126,7 @@ class NodeGraphScene(QGraphicsScene):
             return self.getNodeFromWidget(widget)
         return None
 
-    def getWidgetFromUUID(self, uuid: UUID) -> Optional[NodeWidget]:
+    def getWidgetFromUUID(self, uuid: UUID) -> Optional[NodeProxyWidget]:
         """Get node widget matching given UUID"""
 
         assertRef(uuid)
