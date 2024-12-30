@@ -2,75 +2,100 @@ from __future__ import annotations
 from typing import Optional
 from enum import Enum
 from uuid import UUID, uuid1
-from PySide6.QtGui import QPainter, QColor, QMouseEvent, QPen
-from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QGraphicsProxyWidget
+from PySide6.QtGui import QPainter, QColor, QMouseEvent
+from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QGraphicsWidget, QGraphicsProxyWidget, QVBoxLayout, QLabel, QFrame
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal, QObject, Slot
 
 from .asserts import assertRef, assertTrue
+from .styles import node_widget_style
+
+class NodeWidget(QWidget):
+    """
+    Actual widget representation of the node.
+    """
+    def __init__(self):
+        super().__init__()
+        self.setMinimumSize(128, 128)
+        self.setObjectName("NodeWidget")
+        self.setStyleSheet(node_widget_style)
+        self.root_layout: QVBoxLayout = QVBoxLayout()
+        self.root_layout.setSpacing(0)
+        self.root_layout.setContentsMargins(2, 2, 2, 2)
+        self.setLayout(self.root_layout)
+
+        self._createLabelArea()
+        self._createNodeArea()
+
+    def _createLabelArea(self) -> None:
+        self.label_layout: QVBoxLayout = QVBoxLayout()
+        self.label_layout.setSpacing(0)
+        self.label_layout.setContentsMargins(0, 0, 0, 0)
+        self.label_frame: QFrame = QFrame()
+        self.label_frame.setObjectName("NodeLabelArea")
+        self.label_frame.setLayout(QVBoxLayout())
+        self.label_frame.layout().setSpacing(0)
+        self.label_frame.layout().setContentsMargins(4, 4, 4, 4)
+        self.node_label: QLabel = QLabel("Node Label")
+        self.node_label.setObjectName("NodeLabelText")
+        self.label_frame.layout().addWidget(self.node_label)
+        self.node_name: QLabel = QLabel("Node Name")
+        self.node_name.setObjectName("NodeNameText")
+        self.label_frame.layout().addWidget(self.node_name)
+        self.label_layout.addWidget(self.label_frame)
+        self.root_layout.addLayout(self.label_layout)
+
+    def _createNodeArea(self) -> None:
+        self.bottom_layout: QVBoxLayout = QVBoxLayout()
+        self.bottom_frame: QFrame = QFrame()
+        self.bottom_frame.setObjectName("NodeArea")
+        self.bottom_frame.setMinimumHeight(100)
+        self.bottom_layout.addWidget(self.bottom_frame)
+        self.root_layout.addLayout(self.bottom_layout)
+
+    def setLabelText(self, text: str) -> None:
+        """Set text value of the node label widget"""
+        assertRef(text)
+        self.node_label.setText(text.upper())
+
+    def setNameText(self, text: str) -> None:
+        """Set text value of the node name widget"""
+        assertRef(text)
+        self.node_name.setText(text)
 
 
-class NodeProxyWidget(QObject, QGraphicsItem):
+class NodeProxyWidget(QGraphicsWidget):
+    """
+    Proxy widget class which hosts the actual node widget.
+    It handles tranforms and other graphics scene events of the graph its drawned inside.
+    """
     positionChanged = Signal(QPointF)
     selectionChanged = Signal(bool)
     depth_order: int = 100
 
     def __init__(self) -> None:
-        QObject.__init__(self, None)
-        QGraphicsItem.__init__(self, None)
+        super().__init__()
+        self.min_size: int = 128
+        self.setMinimumSize(self.min_size, self.min_size)
+        self.__widget: NodeWidget = NodeWidget()
+        self.__proxy: QGraphicsProxyWidget = QGraphicsProxyWidget()
+        self.__proxy.setWidget(self.__widget)
+        self.__proxy.setParentItem(self)
 
         self.uuid = uuid1()
-        self.width: float = 128
-        self.height: float = 128
         self.setZValue(self.depth_order)
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        self.labelHeight = 20
-        self.labelBackground = QColor(92, 92, 92)
-        self.labelForeground = QColor(220, 220, 220)
-        self.labelText = "Node"
-        self.contentBackground = QColor(200, 200, 200)
-        self.contentForeground = QColor(250, 250, 250)
-        self.border_color_idle: QColor = QColor(20, 20, 20)
-        self.border_color_selected: QColor = QColor(140, 50,50)
-        self.border_color: QColor = self.border_color_idle
+        self.labelHeight = 32
         self.__inputPins: list[NodePin] = []
         self.__outputPins: list[NodePin] = []
 
+    def getWidget(self) -> NodeWidget:
+        return self.__widget
+
     def boundingRect(self) -> QRectF:
         """Get bounding area representing the entire node widget"""
-        return QRectF(0, 0, self.width, self.height)
-
-    def getLabelArea(self) -> QRectF:
-        """Get bounding area representing the label portion of the node widget"""
-        return QRectF(0, 0, self.width, self.labelHeight)
-
-    def getContentArea(self) -> QRectF:
-        """Get bounding area representing the content portion of the node widget"""
-        return QRectF(0, self.labelHeight, self.width, self.height - self.labelHeight)
-
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = ...) -> None:
-        """Draws the entire widget"""
-        painter.setRenderHint(QPainter.Antialiasing)
-
-        # Draw border around the node
-        pen:  QPen = QPen(self.border_color)
-        pen.setWidth(2)
-        painter.setPen(pen)
-        painter.drawRect(self.boundingRect())
-
-        # Draw label area
-        painter.setBrush(self.labelBackground)
-        painter.drawRect(self.getLabelArea())
-
-        # Draw label text
-        text_area = self.getLabelArea().adjusted(10, 0, 0, 0)
-        painter.setBrush(self.labelForeground)
-        painter.drawText(text_area, Qt.AlignVCenter | Qt.AlignLeft, self.labelText)
-
-        # Draw node content area
-        painter.setBrush(self.contentBackground)
-        painter.drawRect(self.getContentArea())
+        return QRectF(0, 0, self.min_size, self.min_size)
 
     def itemChange(self, change, value):
         """Override for handling internal widget changes"""
@@ -79,9 +104,11 @@ class NodeProxyWidget(QObject, QGraphicsItem):
 
         if change == QGraphicsItem.ItemSelectedChange:
             if value:
-                self.border_color = self.border_color_selected
+                # TODO: Set widget selection color
+                pass
             else:
-                self.border_color = self.border_color_idle
+                # TODO: Set widget dormant color
+                pass
             self.selectionChanged.emit(value)
 
         return super().itemChange(change, value)
@@ -91,10 +118,6 @@ class NodeProxyWidget(QObject, QGraphicsItem):
         super().mouseReleaseEvent(event)
         if event.button is Qt.MouseButton.LeftButton:
             self.positionChanged.emit(self.scenePos())
-
-    def setLabelText(self, text: str) -> None:
-        """Update text drawn in the label area of the widget"""
-        self.labelText = text
 
     def addInputs(self, ids: list[UUID]) -> None:
         """Add node input pins"""
@@ -131,7 +154,7 @@ class NodeProxyWidget(QObject, QGraphicsItem):
         # Output pins layout
         offset = self.labelHeight + pin_padding
         for pin in self.__outputPins:
-            pin.setPos(self.getContentArea().width() - pin.getRadius(), offset)
+            pin.setPos(self.min_size - pin.getRadius(), offset)
             offset += pin.boundingRect().height() + pin_padding
 
     def getInputPin(self, uuid: UUID) -> Optional[NodePin]:

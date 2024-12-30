@@ -247,7 +247,8 @@ class Node(QObject):
     def initWidget(self) -> None:
         """Create widget object representing this node"""
         self.widget = NodeProxyWidget()
-        self.widget.setLabelText(self.label)
+        self.widget.getWidget().setLabelText(self.label)
+        self.widget.getWidget().setNameText(self.name)
         self.widget.addInputs(list(self.__inputs.keys()))
         self.widget.addOutputs(list(self.__outputs.keys()))
         self.widget.positionChanged.connect(self.onWidgetPositionChanged)
