@@ -45,7 +45,7 @@ class OutputShaderNode(ShaderNodeBase):
     Final shader code for current graph is generated from this node and
     any nodes down stream from this node.
     """
-    label = "Output Node"
+    label = "Output"
 
     def __init__(self):
         super().__init__()
@@ -88,7 +88,7 @@ class FloatShaderNode(ShaderNodeBase):
     """
     Float shader is a simple node that defines shader float variable.
     """
-    label = "Float Node"
+    label = "Float"
 
     def __init__(self) -> None:
         super().__init__()
@@ -128,7 +128,7 @@ class MulShaderNode(ShaderNodeBase):
     """
     Mull shader node performs multiplication of two input values and outputs result.
     """
-    label = "Mul Node"
+    label = "Mul"
 
     def __init__(self) -> None:
         super().__init__()
