@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget, 
 from PySide6.QtCore import QRectF, Qt, QPointF, Signal, QObject, Slot
 
 from .asserts import assertRef, assertTrue
-from .styles import node_widget_style
+from .styles import node_widget_style, node_selected_widget_style
 
 class NodeWidget(QWidget):
     """
@@ -104,11 +104,9 @@ class NodeProxyWidget(QGraphicsWidget):
 
         if change == QGraphicsItem.ItemSelectedChange:
             if value:
-                # TODO: Set widget selection color
-                pass
+                self.__widget.setStyleSheet(node_selected_widget_style)
             else:
-                # TODO: Set widget dormant color
-                pass
+                self.__widget.setStyleSheet(node_widget_style)
             self.selectionChanged.emit(value)
 
         return super().itemChange(change, value)
