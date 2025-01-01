@@ -7,7 +7,7 @@ from enum import Enum
 from PySide6.QtCore import QObject, QPointF, Slot, Signal
 
 from .connection_widget import ConnectionWidget
-from .node_widget import NodeProxyWidget
+from .node_widget import NodeProxyWidget, NodePropetyInfo
 from .asserts import assertRef, assertTrue
 
 
@@ -43,6 +43,9 @@ class NodeIO:
         self.name: str = None
         self.label: str = None
 
+    def getInfo(self) -> NodePropetyInfo:
+        return NodePropetyInfo(self.uuid, self.label)
+
     @staticmethod
     def create(name: str, label: str) -> NodeIO:
         """Shorthand function for creating node input/outputs"""
@@ -57,6 +60,11 @@ class NodeConnection():
     """Class representing singular connection between owner node and nother"""
 
     def __init__(self, src: Node, src_uuid: UUID, target: Node, target_uuid: UUID):
+        assertRef(src)
+        assertRef(src_uuid)
+        assertRef(target)
+        assertRef(target_uuid)
+
         self.uuid = uuid1()
         self.source: Node = src
         self.source_uuid: UUID = src_uuid
@@ -92,8 +100,16 @@ class NodeConnection():
         """Event handler invoked when either source or target node changes position"""
         assertRef(self.getWidget())
         assertRef(value)
+        assertRef(self.source.getWidget())
+        assertRef(self.target.getWidget())
 
-        # Trigger widget re-draw
+        start: QPointF = self.source.getWidget().getPinPosition(self.source_uuid)
+        end: QPointF = self.target.getWidget().getPinPosition(self.target_uuid)
+        assertRef(start)
+        assertRef(end)
+
+        self.getWidget().start = start
+        self.getWidget().end = end
         self.getWidget().prepareGeometryChange()
         self.getWidget().update()
 
@@ -246,11 +262,12 @@ class Node(QObject):
 
     def initWidget(self) -> None:
         """Create widget object representing this node"""
-        self.widget = NodeProxyWidget()
+        input_infos: list[NodePropetyInfo] = [i.getInfo() for i in self.__inputs.values()]
+        output_infos: list[NodePropetyInfo] = [i.getInfo() for i in self.__outputs.values()]
+
+        self.widget = NodeProxyWidget(self.uuid, input_infos, output_infos)
         self.widget.getWidget().setLabelText(self.label)
         self.widget.getWidget().setNameText(self.name)
-        self.widget.addInputs(list(self.__inputs.keys()))
-        self.widget.addOutputs(list(self.__outputs.keys()))
         self.widget.positionChanged.connect(self.onWidgetPositionChanged)
         self.widget.selectionChanged.connect(self.onWidgetSelectionChanged)
 

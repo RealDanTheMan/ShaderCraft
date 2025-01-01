@@ -4,12 +4,12 @@ from uuid import UUID, uuid1
 
 import PySide6
 from .node import Node, NodeConnection, NodeIO
-from .node_widget import NodeProxyWidget, NodePin
+from .node_widget import NodeProxyWidget, NodePinShapeWidget
 from .shadernodes import FloatShaderNode, MulShaderNode, OutputShaderNode
 from .asserts import assertRef, assertFalse, assertTrue
-from PySide6.QtWidgets import QGraphicsScene
+from PySide6.QtWidgets import QGraphicsScene, QWidget, QGraphicsItem, QGraphicsProxyWidget
 from PySide6.QtGui import QMouseEvent
-from PySide6.QtCore import Signal, Slot, QObject
+from PySide6.QtCore import Signal, Slot, QObject, QPoint, Qt
 
 
 class NodeGraphScene(QGraphicsScene):
@@ -23,8 +23,10 @@ class NodeGraphScene(QGraphicsScene):
         self.__nodes: list[Node] = []
         self.__names: list[str] = []
         self.__names_lookup: dict[str, int] = {}
-        self.__drag_pin: Optional[NodePin] = None
-        self.__drop_pin: Optional[NodePin] = None
+        self.__drag_pin: Optional[UUID] = None
+        self.__drag_pin_owner: Optional[Node] = None
+        self.__drop_pin: Optional[UUID] = None
+        self.__drop_pin_owner: Optional[Node] = None
         self.__selected_node: Optional[Node] = None
         self.__addTestNodes()
 
@@ -47,6 +49,7 @@ class NodeGraphScene(QGraphicsScene):
         node.connectionRemoved.connect(self.onNodeConnectionRemoved)
         if node.getWidget() is None:
             node.initWidget()
+
         self.addItem(node.getWidget())
         print(f"NodeGraphScene: Adding new node -> {node.uuid}")
 
@@ -158,41 +161,57 @@ class NodeGraphScene(QGraphicsScene):
 
         return connections
 
+    def getWidgetUnderMouse(self, mouse_event: QMouseEvent) -> Optional[QWidget]:
+        item: QGraphicsItem = self.itemAt(mouse_event.scenePosition(), self.views()[0].transform())
+        if item is not None and isinstance(item, QGraphicsProxyWidget):
+            if item.widget() is None:
+                return None
+            pos: QPoint = item.widget().mapFromGlobal(mouse_event.screenPos())
+            widget: QWidget = item.widget().childAt(pos)
+            return widget
+        return None
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Event handler invoked when mouse button press happens inside the graph"""
-        item = self.itemAt(event.scenePos(), self.views()[0].transform())
-        if item and isinstance(item, NodePin):
-            self.beginPinDragDrop(item)
-        else:
-            super().mousePressEvent(event)
+        if event.button() == Qt.MouseButton.LeftButton:
+            widget: QWidget = self.getWidgetUnderMouse(event)
+            if widget is not None and isinstance(widget, NodePinShapeWidget):
+                pass
+        super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Event handler invoked when the mouse button release happens inside the graph"""
-        item = self.itemAt(event.scenePos(), self.views()[0].transform())
-        if item and isinstance(item, NodePin):
-            self.endPinDragDrop(item)
-        else:
-            super().mouseReleaseEvent(event)
+        if event.button() == Qt.MouseButton.LeftButton:
+            widget: QWidget = self.getWidgetUnderMouse(event)
+            if widget is not None and isinstance(widget, NodePinShapeWidget):
+                pass
+        super().mouseReleaseEvent(event)
 
-    def beginPinDragDrop(self, pin: NodePin) -> None:
+    def beginPinDragDrop(self, node: Node, pin: UUID) -> None:
         """Start of node pin drag & drop event flow"""
+        assertRef(node)
         assertRef(pin)
-        print(f"Node pin drag registered [pin:{pin.uuid}]")
-        self.__drag_pin = pin
-        self.__drop_pin = None
+        print(f"Node pin drag registered [node:{node}] [pin:{pin}]")
 
-    def endPinDragDrop(self, pin: NodePin) -> None:
+        self.__drag_pin = pin
+        self.__drag_pin_owner = node
+        self.__drop_pin = None
+        self.__drop_pin_owner = None
+
+    def endPinDragDrop(self, node: Node, pin: UUID) -> None:
         """End of node pin drag & drop event flow"""
+        assertRef(node)
         assertRef(pin)
-        print(f"Node pin drop registered [pin:{pin.uuid}]")
+        print(f"Node pin drop registered [node:{node}] [pin:{pin}]")
+
         self.__drop_pin = pin
+        self.__drop_pin_owner = node
         self.finalisePinDragDrop()
 
     def resetPinDragDrop(self) -> None:
         """Resets node pin drag & drop event flow"""
         self.__drag_pin = None
+        self.__drag_pin_owner = None
         self.__drop_pin = None
+        self.__drop_pin_owner = None
 
     def finalisePinDragDrop(self) -> None:
         """Finalise node pin drag & drop event and create connection if valid"""
@@ -203,20 +222,20 @@ class NodeGraphScene(QGraphicsScene):
             self.resetPinDragDrop()
             return
 
-        if a.role is not NodePin.Role.OUTPUT:
+        if self.__drag_pin_owner.getNodeOutput(self.__drag_pin) is None:
             print("Aborting pin drag & drop: source pin is not of output type")
             return
 
-        if b.role is not NodePin.Role.INPUT:
+        if self.__drop_pin_owner.getNodeInput(self.__drop_pin) is None:
             print("Aborting pin drag & drop: target pin is not of input type")
             return
 
-        if a.node_uuid is b.node_uuid:
+        if self.__drag_pin_owner.uuid == self.__drop_pin_owner.uuid:
             print("Aborting pin drag & drop: pins share parents")
             self.resetPinDragDrop()
             return
 
-        if a.uuid is b.uuid:
+        if self.__drag_pin == self.__drop_pin:
             print("Aborting pin drag & drop: pins are the same")
             self.resetPinDragDrop()
             return

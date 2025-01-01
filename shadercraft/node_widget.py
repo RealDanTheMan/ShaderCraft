@@ -1,30 +1,118 @@
 from __future__ import annotations
 from typing import Optional
 from enum import Enum
+from dataclasses import dataclass
 from uuid import UUID, uuid1
 from PySide6.QtGui import QPainter, QColor, QMouseEvent
-from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QGraphicsWidget, QGraphicsProxyWidget, QVBoxLayout, QLabel, QFrame
-from PySide6.QtCore import QRectF, Qt, QPointF, Signal, QObject, Slot
+from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QGraphicsWidget, QGraphicsProxyWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout
+from PySide6.QtCore import QRectF, Qt, QPointF, QPoint, Signal, QObject, Slot
 
 from .asserts import assertRef, assertTrue
 from .styles import node_widget_style, node_selected_widget_style
+
+@dataclass
+class NodePropetyInfo:
+    uuid: UUID = None
+    label: str = None
+
+
+class NodePinShapeWidget(QWidget):
+    radius: int = 8
+
+    def __init__(self, node_uuid: UUID, property_uuid: UUID, parent: QWidget = None) -> None:
+        super().__init__(parent)
+        self.setMinimumSize(self.radius * 3, self.radius * 3)
+        self.setMaximumSize(self.minimumSize())
+
+    def paintEvent(self, event) -> None:
+        painter: QPainter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing, True)
+        painter.setBrush(QColor(200, 10, 10))
+
+        x: int = self.rect().center().x() - self.radius
+        y: int = self.rect().center().y() - self.radius
+        size: int = self.radius * 2
+        painter.drawEllipse(x, y, size, size)
+
+
+class NodePropertyWidget(QWidget):
+    class Role(Enum):
+        OUTPUT = 0
+        INPUT = 1
+
+    def __init__(
+            self,
+            node_uuid: UUID,
+            name: str,
+            property_uuid: UUID,
+            role: NodePropertyWidget.Role,
+            parent: QWidget = None
+    ) -> None:
+        super().__init__(parent)
+        assertRef(role)
+        assertRef(node_uuid)
+        assertRef(property_uuid)
+
+        self.name = name
+        self.node_uuid = node_uuid
+        self.property_uuid = property_uuid
+        self.main_layout: QHBoxLayout = QHBoxLayout()
+        self.main_layout.setContentsMargins(2, 2, 2, 2)
+        self.main_layout.setSpacing(2)
+        self.label_widget: QLabel = QLabel(self.name, parent=self)
+        self.pin_widget: NodePinShapeWidget = NodePinShapeWidget(self.node_uuid, self.property_uuid)
+
+        if role is NodePropertyWidget.Role.INPUT:
+            self.main_layout.addWidget(self.pin_widget)
+            self.main_layout.addWidget(self.label_widget)
+        elif role is NodePropertyWidget.Role.OUTPUT:
+            self.main_layout.addWidget(self.label_widget)
+            self.main_layout.addWidget(self.pin_widget)
+        else:
+            raise RuntimeError("Invalid role argument!")
+        self.setLayout(self.main_layout)
+
 
 class NodeWidget(QWidget):
     """
     Actual widget representation of the node.
     """
-    def __init__(self):
+    def __init__(self, node_uuid: UUID, inputs: list[NodePropetyInfo], outputs: list[NodePropetyInfo]):
         super().__init__()
-        self.setMinimumSize(128, 128)
+        self.node_uuid = node_uuid
+        self.setMinimumSize(160, 160)
         self.setObjectName("NodeWidget")
         self.setStyleSheet(node_widget_style)
         self.root_layout: QVBoxLayout = QVBoxLayout()
         self.root_layout.setSpacing(0)
         self.root_layout.setContentsMargins(2, 2, 2, 2)
         self.setLayout(self.root_layout)
+        self.property_widgets: list[NodePropertyWidget] = []
 
         self._createLabelArea()
         self._createNodeArea()
+
+        for in_property in inputs:
+            widget: NodePropertyWidget = NodePropertyWidget(
+                self.node_uuid,
+                in_property.label,
+                in_property.uuid,
+                NodePropertyWidget.Role.INPUT,
+                parent=self
+            )
+            self.property_widgets.append(widget)
+            self.inputs_layout.addWidget(widget)
+
+        for out_property in outputs:
+            widget: NodePropertyWidget = NodePropertyWidget(
+                self.node_uuid,
+                out_property.label,
+                out_property.uuid,
+                NodePropertyWidget.Role.OUTPUT,
+                parent=self
+            )
+            self.property_widgets.append(widget)
+            self.outputs_layout.addWidget(widget)
 
     def _createLabelArea(self) -> None:
         self.label_layout: QVBoxLayout = QVBoxLayout()
@@ -48,9 +136,22 @@ class NodeWidget(QWidget):
         self.bottom_layout: QVBoxLayout = QVBoxLayout()
         self.bottom_frame: QFrame = QFrame()
         self.bottom_frame.setObjectName("NodeArea")
-        self.bottom_frame.setMinimumHeight(100)
+        self.bottom_frame.setMinimumHeight(136)
         self.bottom_layout.addWidget(self.bottom_frame)
         self.root_layout.addLayout(self.bottom_layout)
+
+        self.property_layout: QHBoxLayout = QHBoxLayout()
+        self.property_layout.setContentsMargins(4, 4, 4, 4)
+        self.property_layout.setSpacing(0)
+        self.inputs_layout: QVBoxLayout = QVBoxLayout()
+        self.inputs_layout.setContentsMargins(0, 0, 0, 0)
+        self.inputs_layout.setSpacing(0)
+        self.outputs_layout: QVBoxLayout = QVBoxLayout()
+        self.outputs_layout.setContentsMargins(0, 0, 0, 0)
+        self.outputs_layout.setSpacing(0)
+        self.property_layout.addLayout(self.inputs_layout)
+        self.property_layout.addLayout(self.outputs_layout)
+        self.bottom_frame.setLayout(self.property_layout)
 
     def setLabelText(self, text: str) -> None:
         """Set text value of the node label widget"""
@@ -62,21 +163,30 @@ class NodeWidget(QWidget):
         assertRef(text)
         self.node_name.setText(text)
 
+    def getPinLocalPosition(self, uuid: UUID) -> Optional[QPointF]:
+        """Get local postion of pin widget matching given UUID"""
+        matches: list[NodePropertyWidget] = [i for i in self.property_widgets if i.uuid == uuid]
+        if len(matches) > 0:
+            assertTrue(len(matches) == 1)
+            return matches[0].pin_widget.geometry().center()
+        return None
+
 
 class NodeProxyWidget(QGraphicsWidget):
     """
     Proxy widget class which hosts the actual node widget.
     It handles tranforms and other graphics scene events of the graph its drawned inside.
     """
-    positionChanged = Signal(QPointF)
-    selectionChanged = Signal(bool)
+    positionChanged: Signal = Signal(QPointF)
+    selectionChanged: Signal = Signal(bool)
     depth_order: int = 100
 
-    def __init__(self) -> None:
+    def __init__(self, node_uuid: UUID, inputs: list[NodePropetyInfo], outputs: list[NodePropetyInfo]) -> None:
         super().__init__()
-        self.min_size: int = 128
+        self.node_uuid: UUID = node_uuid
+        self.min_size: int = 160
         self.setMinimumSize(self.min_size, self.min_size)
-        self.__widget: NodeWidget = NodeWidget()
+        self.__widget: NodeWidget = NodeWidget(node_uuid, inputs, outputs)
         self.__proxy: QGraphicsProxyWidget = QGraphicsProxyWidget()
         self.__proxy.setWidget(self.__widget)
         self.__proxy.setParentItem(self)
@@ -86,11 +196,9 @@ class NodeProxyWidget(QGraphicsWidget):
         self.setFlag(QGraphicsItem.ItemIsMovable)
         self.setFlag(QGraphicsItem.ItemIsSelectable)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges)
-        self.labelHeight = 32
-        self.__inputPins: list[NodePin] = []
-        self.__outputPins: list[NodePin] = []
 
     def getWidget(self) -> NodeWidget:
+        """Get handle to the inner widget object"""
         return self.__widget
 
     def boundingRect(self) -> QRectF:
@@ -117,143 +225,12 @@ class NodeProxyWidget(QGraphicsWidget):
         if event.button is Qt.MouseButton.LeftButton:
             self.positionChanged.emit(self.scenePos())
 
-    def addInputs(self, ids: list[UUID]) -> None:
-        """Add node input pins"""
-        for input_id in ids:
-            pin = NodePin()
-            pin.uuid = input_id
-            pin.node_uuid = self.uuid
-            pin.role = NodePin.Role.INPUT
-            pin.setParentItem(self)
-            self.__inputPins.append(pin)
-        self.updateLayout()
+    def getPinPosition(self, uuid: UUID) -> Optional[QPointF]:
+        """Get graph scene relative position of node pin matching given UUID"""
+        assertRef(uuid)
+        assertRef(self, self.getWidget())
 
-    def addOutputs(self, ids: list[UUID]) -> None:
-        """Add node output pins"""
-        for output_id in ids:
-            pin = NodePin()
-            pin.uuid = output_id
-            pin.node_uuid = self.uuid
-            pin.role = NodePin.Role.OUTPUT
-            pin.setParentItem(self)
-            pin.mouseDragBegin.connect(self.onPinDragBegin)
-            pin.mouseDragEnd.connect(self.onPinDragEnd)
-            self.__outputPins.append(pin)
-        self.updateLayout()
-
-    def updateLayout(self):
-        """Regenerate this node widget layout"""
-        pin_padding = 6
-        offset = self.labelHeight + pin_padding
-        for pin in self.__inputPins:
-            pin.setPos(-pin.getRadius(), offset)
-            offset += pin.boundingRect().height() + pin_padding
-
-        # Output pins layout
-        offset = self.labelHeight + pin_padding
-        for pin in self.__outputPins:
-            pin.setPos(self.min_size - pin.getRadius(), offset)
-            offset += pin.boundingRect().height() + pin_padding
-
-    def getInputPin(self, uuid: UUID) -> Optional[NodePin]:
-        """Get input pin widget of matching UUID"""
-        for pin in self.__inputPins:
-            if pin.uuid == uuid:
-                return pin
+        local_pos: QPoint = self.__widget.getPinLocalPosition(uuid)
+        if local_pos is not None:
+            return self.__proxy.mapToScene(local_pos)
         return None
-
-    def getOutputPin(self, uuid: UUID) -> Optional[NodePin]:
-        """Get output pin of matchig UUID"""
-        for pin in self.__outputPins:
-            if pin.uuid == uuid:
-                return pin
-        return None
-
-    @Slot(QObject)
-    def onPinDragBegin(self, pin: QObject) -> None:
-        """Event handler invoked when node pin begins to be dragged by mouse pointer"""
-        assertTrue(isinstance(pin, NodePin))
-        print(f"Pin drag started -> Pin '{pin.getUUID()}'")
-
-    @Slot(QObject)
-    def onPinDragEnd(self, pin: QObject) -> None:
-        """Event handler invoked when dragged pin is dropped"""
-        assertTrue(isinstance(pin, NodePin))
-        print(f"Pin drag ended -> Pin '{pin.getUUID()}'")
-
-
-class NodePin(QObject, QGraphicsItem):
-    """
-    Class encapsulating custin graphics widget representing node pin.
-    Node pins can be dragged over pins of other nodes to form connections.
-    """
-    depth_order: int = NodeProxyWidget.depth_order + 10
-
-    class Role(Enum):
-        """Enum class representing pin role"""
-        NONE = 0
-        INPUT = 1
-        OUTPUT = 2
-
-    mouseDragBegin = Signal(QObject)
-    mouseDragEnd = Signal(QObject)
-
-    def __init__(self):
-        """Default constructor"""
-        QObject.__init__(self, None)
-        QGraphicsItem.__init__(self, None)
-
-        self.role: NodePin.Role = NodePin.Role.NONE
-        self.setZValue(self.depth_order)
-        self.setAcceptHoverEvents(True)
-        self.setAcceptDrops(True)
-        self.radius: int = 6
-        self.foreground: QColor = QColor(0, 200, 0)
-        self.foreground_hover: QColor = QColor(200, 0, 100)
-        self.uuid: UUID = uuid1()
-        self.node_uuid: UUID = None
-        self.__current_color: QColor = self.foreground
-
-    def paint(self, painter: QPainter, option: QStyleOptionGraphicsItem, widget: QWidget | None = ...) -> None:
-        """Draw this pin to the screen"""
-        painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(self.__current_color)
-        painter.drawEllipse(0, 0, self.radius*2, self.radius*2)
-
-    def boundingRect(self) -> QRectF:
-        """Get bounding area representing the entire node widget"""
-        return QRectF(0, 0, self.radius*2, self.radius*2)
-
-    def getRadius(self) -> int:
-        """Get pin circle radius in pixels"""
-        return self.radius
-
-    def getUUID(self) -> UUID:
-        """Get unique identifier of this pin"""
-        return self.uuid
-
-    def hoverEnterEvent(self, event: QMouseEvent) -> None:
-        """Event handler invoked when the mouse pointer entered pin area"""
-        self.__current_color = self.foreground_hover
-        super().hoverEnterEvent(event)
-
-    def hoverLeaveEvent(self, event: QMouseEvent) -> None:
-        """Event handler invoked when the mouse pointer leaves pin area"""
-        self.__current_color = self.foreground
-        super().hoverLeaveEvent(event)
-
-    def mousePressEvent(self, event: QMouseEvent) -> None:
-        """Event handler invoked when the mouse button is pressed while over the pin area"""
-        assertRef(event)
-        self.mouseDragBegin.emit(self)
-
-    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
-        """Event handler invoked when the mouse button is release while over the pin area"""
-        assertRef(event)
-        self.mouseDragEnd.emit(self)
-
-    def getSceneCenterPos(self) -> QPointF:
-        """Get position of the center of the pin in scene coordinates"""
-        x = self.scenePos().x() + float(self.radius)
-        y = self.scenePos().y() + float(self.radius)
-        return QPointF(x, y)
