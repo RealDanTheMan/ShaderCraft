@@ -96,10 +96,10 @@ class FloatShaderNode(ShaderNodeBase):
         self.label = "Shader Float"
         self.default_input_val: float = 0.0
 
-        self.float_input = NodeIO.create("FloatInput", "Float In")
+        self.float_input = NodeIO.create("FloatInput", "In")
         self._registerInput(self.float_input)
 
-        self.float_output = NodeIO.create("FloatOutput", "Float Out")
+        self.float_output = NodeIO.create("FloatOutput", "Out")
         self._registerOutput(self.float_output)
 
     def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
@@ -140,9 +140,9 @@ class MulShaderNode(ShaderNodeBase):
         self._def_input_b = 1.0
 
         # Node inputs
-        self.input_a = NodeIO.create("MulInputA", "Value A")
+        self.input_a = NodeIO.create("MulInputA", "A")
         self._registerInput(self.input_a)
-        self.input_b = NodeIO.create("MulInputB", "Value B")
+        self.input_b = NodeIO.create("MulInputB", "B")
         self._registerInput(self.input_b)
 
         # Node output
