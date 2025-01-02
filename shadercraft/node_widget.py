@@ -4,7 +4,18 @@ from enum import Enum
 from dataclasses import dataclass
 from uuid import UUID, uuid1
 from PySide6.QtGui import QPainter, QColor, QMouseEvent
-from PySide6.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget, QGraphicsWidget, QGraphicsProxyWidget, QVBoxLayout, QLabel, QFrame, QHBoxLayout
+from PySide6.QtWidgets import (
+    QGraphicsItem,
+    QStyleOptionGraphicsItem,
+    QWidget,
+    QGraphicsWidget,
+    QGraphicsProxyWidget,
+    QVBoxLayout,
+    QLabel,
+    QFrame,
+    QHBoxLayout,
+    QGraphicsView
+)
 from PySide6.QtCore import QRectF, Qt, QPointF, QPoint, Signal, QObject, Slot
 
 from .asserts import assertRef, assertTrue
@@ -12,15 +23,26 @@ from .styles import node_widget_style, node_selected_widget_style
 
 @dataclass
 class NodePropetyInfo:
+    """
+    Convinience class for storing minimal information representing node property.
+    UUI: Property identifier
+    Lavel: Property label text
+    """
     uuid: UUID = None
     label: str = None
 
 
 class NodePinShapeWidget(QWidget):
+    """
+    Widget class represneting small round pin visual.
+    Pin widgets can be dragged and dropped over other pins to form node connections.
+    """
     radius: int = 8
 
     def __init__(self, node_uuid: UUID, property_uuid: UUID, parent: QWidget = None) -> None:
         super().__init__(parent)
+        self.node_uuid = node_uuid
+        self.property_uuid = property_uuid
         self.setMinimumSize(self.radius * 3, self.radius * 3)
         self.setMaximumSize(self.minimumSize())
 
@@ -36,7 +58,17 @@ class NodePinShapeWidget(QWidget):
 
 
 class NodePropertyWidget(QWidget):
+    """
+    Widget class representing node propety.
+    Widget property is represented by its pin along with property label text field.
+    Node widgets can contain arbitrary number of output or input properties.
+    Widget property UUID maps to underlying node property UUID it represents.
+    """
+
     class Role(Enum):
+        """
+        Enum class representing if its output or input property.
+        """
         OUTPUT = 0
         INPUT = 1
 
@@ -60,7 +92,11 @@ class NodePropertyWidget(QWidget):
         self.main_layout.setContentsMargins(2, 2, 2, 2)
         self.main_layout.setSpacing(2)
         self.label_widget: QLabel = QLabel(self.name, parent=self)
-        self.pin_widget: NodePinShapeWidget = NodePinShapeWidget(self.node_uuid, self.property_uuid)
+        self.pin_widget: NodePinShapeWidget = NodePinShapeWidget(
+            self.node_uuid,
+            self.property_uuid,
+            parent = self
+        )
 
         if role is NodePropertyWidget.Role.INPUT:
             self.main_layout.addWidget(self.pin_widget)
@@ -77,8 +113,14 @@ class NodeWidget(QWidget):
     """
     Actual widget representation of the node.
     """
-    def __init__(self, node_uuid: UUID, inputs: list[NodePropetyInfo], outputs: list[NodePropetyInfo]):
-        super().__init__()
+    def __init__(
+        self,
+        node_uuid: UUID,
+        inputs: list[NodePropetyInfo],
+        outputs: list[NodePropetyInfo],
+        parent: QWidget = None
+    ):
+        super().__init__(parent=parent)
         self.node_uuid = node_uuid
         self.setMinimumSize(160, 160)
         self.setObjectName("NodeWidget")
@@ -163,12 +205,14 @@ class NodeWidget(QWidget):
         assertRef(text)
         self.node_name.setText(text)
 
-    def getPinLocalPosition(self, uuid: UUID) -> Optional[QPointF]:
+    def getPinScreenPosition(self, uuid: UUID) -> Optional[QPointF]:
         """Get local postion of pin widget matching given UUID"""
-        matches: list[NodePropertyWidget] = [i for i in self.property_widgets if i.uuid == uuid]
+        matches: list[NodePropertyWidget] = [i for i in self.property_widgets if i.property_uuid == uuid]
         if len(matches) > 0:
             assertTrue(len(matches) == 1)
-            return matches[0].pin_widget.geometry().center()
+            pin_widget: NodePinShapeWidget = matches[0].pin_widget
+            local_pos: QPointF = pin_widget.rect().center()
+            return pin_widget.mapToGlobal(local_pos)
         return None
 
 
@@ -225,12 +269,18 @@ class NodeProxyWidget(QGraphicsWidget):
         if event.button is Qt.MouseButton.LeftButton:
             self.positionChanged.emit(self.scenePos())
 
-    def getPinPosition(self, uuid: UUID) -> Optional[QPointF]:
+    def getPinScenePos(self, uuid: UUID) -> Optional[QPointF]:
         """Get graph scene relative position of node pin matching given UUID"""
         assertRef(uuid)
-        assertRef(self, self.getWidget())
+        assertRef(self.getWidget())
 
-        local_pos: QPoint = self.__widget.getPinLocalPosition(uuid)
-        if local_pos is not None:
-            return self.__proxy.mapToScene(local_pos)
+        screen_pos: QPoint = self.__widget.getPinScreenPosition(uuid)
+        if screen_pos is not None:
+            assertRef(self.scene())
+            assertTrue(len(self.scene().views()) == 1)
+
+            view: QGraphicsView = self.scene().views()[0]
+            view_pos: QPointF = view.mapFromGlobal(screen_pos)
+            scene_pos: QPointF = view.mapToScene(view_pos)
+            return scene_pos
         return None

@@ -111,6 +111,13 @@ class NodeGraphScene(QGraphicsScene):
                 nodes.append(node)
         return nodes
 
+    def getNodeFromUUID(self, uuid: UUID) -> Optional[Node]:
+        """Get node in the scene that matches given UUID"""
+        for node in self.__nodes:
+            if node.uuid == uuid:
+                return node
+        return None
+
     def getNodeFromWidget(self, widget: NodeProxyWidget) -> Optional[Node]:
         """Get handle to the node linked to given node widget"""
 
@@ -162,7 +169,8 @@ class NodeGraphScene(QGraphicsScene):
         return connections
 
     def getWidgetUnderMouse(self, mouse_event: QMouseEvent) -> Optional[QWidget]:
-        item: QGraphicsItem = self.itemAt(mouse_event.scenePosition(), self.views()[0].transform())
+        """Get hadle to the windget currently under mouse pointer"""
+        item: QGraphicsItem = self.itemAt(mouse_event.scenePos(), self.views()[0].transform())
         if item is not None and isinstance(item, QGraphicsProxyWidget):
             if item.widget() is None:
                 return None
@@ -172,17 +180,25 @@ class NodeGraphScene(QGraphicsScene):
         return None
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
+        """Event handler invoked when mouse button press happens inside the graph scene"""
         if event.button() == Qt.MouseButton.LeftButton:
             widget: QWidget = self.getWidgetUnderMouse(event)
             if widget is not None and isinstance(widget, NodePinShapeWidget):
-                pass
+                node: Node = self.getNodeFromUUID(widget.node_uuid)
+                assertRef(node)
+                self.beginPinDragDrop(node, widget.property_uuid)
+                return
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        """Event handler invoked when mouse button is released inside graph scene"""
         if event.button() == Qt.MouseButton.LeftButton:
             widget: QWidget = self.getWidgetUnderMouse(event)
             if widget is not None and isinstance(widget, NodePinShapeWidget):
-                pass
+                node: Node = self.getNodeFromUUID(widget.node_uuid)
+                assertRef(node)
+                self.endPinDragDrop(node, widget.property_uuid)
+                return
         super().mouseReleaseEvent(event)
 
     def beginPinDragDrop(self, node: Node, pin: UUID) -> None:
@@ -215,59 +231,69 @@ class NodeGraphScene(QGraphicsScene):
 
     def finalisePinDragDrop(self) -> None:
         """Finalise node pin drag & drop event and create connection if valid"""
-        a = self.__drag_pin
-        b = self.__drop_pin
-        if a is None or b is None:
-            print("Aborting pin drag & drop: one or more pins are invalid")
+        source_node: Node = self.__drag_pin_owner
+        source_pin: UUID = self.__drag_pin
+        target_node: Node = self.__drop_pin_owner
+        target_pin: UUID = self.__drop_pin
+
+        if source_node is None or source_pin is None:
+            print("Aborting pin drag & drop: source pin or its owner node are invalid")
             self.resetPinDragDrop()
             return
 
-        if self.__drag_pin_owner.getNodeOutput(self.__drag_pin) is None:
+        if target_node is None or target_pin is None:
+            print("Aborting pin drag & drop: target pin or its owner node are invalid")
+            self.resetPinDragDrop()
+            return
+
+        if source_node.getNodeOutput(source_pin) is None:
             print("Aborting pin drag & drop: source pin is not of output type")
             return
 
-        if self.__drop_pin_owner.getNodeInput(self.__drop_pin) is None:
+        if target_node.getNodeInput(target_pin) is None:
             print("Aborting pin drag & drop: target pin is not of input type")
             return
 
-        if self.__drag_pin_owner.uuid == self.__drop_pin_owner.uuid:
+        if source_node.uuid == target_node.uuid:
             print("Aborting pin drag & drop: pins share parents")
             self.resetPinDragDrop()
             return
 
-        if self.__drag_pin == self.__drop_pin:
-            print("Aborting pin drag & drop: pins are the same")
-            self.resetPinDragDrop()
-            return
-
-        self.attemptNodeConnection(a, b)
+        self.attemptNodeConnection(source_node, source_pin, target_node, target_pin)
         self.resetPinDragDrop()
 
-    def attemptNodeConnection(self, pinout: NodePin, pinin: NodePin) -> bool:
-        """Attempts to connect two node via input/output pins"""
-        assertRef(pinout)
-        assertRef(pinin)
-        print(f"Attempting node connection: {pinout.uuid} -> {pinin.uuid}")
+    def attemptNodeConnection(
+        self,
+        source_node: Node,
+        source_pin: UUID,
+        target_node: Node,
+        target_pin: UUID
+    ) -> bool:
+        """
+        Attempts to connect two node via input/output pins.
+        Source side of the connection is output property of a node.
+        Target side of the connection is input property of another node.
+        """
+        assertRef(source_node)
+        assertRef(source_pin)
+        assertRef(target_node)
+        assertRef(target_pin)
+        print(f"Attempting node connection: {source_pin} -> {target_pin}")
 
-        inode: Optional[Node] = self.getNodeFromWidgetUUID(pinin.node_uuid)
-        onode: Optional[Node] = self.getNodeFromWidgetUUID(pinout.node_uuid)
-        if inode is None or onode is None:
-            print("Connection cancelled, could not resolve node from pins")
-            return False
+        assertTrue(source_node.uuid != target_node, "Attempting to connect node to itself")
 
-        node_in: Optional[NodeIO] = inode.getNodeInput(pinin.uuid)
-        node_out: Optional[NodeIO] = onode.getNodeOutput(pinout.uuid)
-        if node_in is None or node_out is None:
-            print("Connection cancelled, failed to resolve node inputs/outputs")
-            return False
+        node_in = target_node.getNodeInput(target_pin)
+        node_out = source_node.getNodeOutput(source_pin)
+        assertRef(node_out, "Source connection has no matching node output")
+        assertRef(node_in, "Target connection has no matching node input")
 
         # Remove existing connection if one is present
-        excon: NodeConnection = inode.getConnectionFromInput(node_in)
+        excon: NodeConnection = target_node.getConnectionFromInput(node_in)
         if excon is not None:
-            inode.removeConnection(excon.uuid)
+            target_node.removeConnection(excon.uuid)
 
         # Create new connection
-        inode.addConnection(node_in.uuid, onode, node_out.uuid)
+        target_node.addConnection(node_in.uuid, source_node, node_out.uuid)
         return True
 
     def onNodeConnectionAdded(self, connection: NodeConnection) -> None:

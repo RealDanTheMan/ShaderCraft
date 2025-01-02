@@ -44,6 +44,7 @@ class NodeIO:
         self.label: str = None
 
     def getInfo(self) -> NodePropetyInfo:
+        """Get minimal information representing this connection"""
         return NodePropetyInfo(self.uuid, self.label)
 
     @staticmethod
@@ -77,9 +78,15 @@ class NodeConnection():
 
     def _createWidget(self) -> ConnectionWidget:
         """Create a widget representing this connection line on the graph"""
-        startpin = self.source.getWidget().getOutputPin(self.source_uuid)
-        endpin = self.target.getWidget().getInputPin(self.target_uuid)
-        widget = ConnectionWidget(startpin, endpin, self.uuid)
+        assertRef(self.source.getWidget())
+        assertRef(self.target.getWidget())
+
+        start: QPointF = self.source.getWidget().getPinScenePos(self.source_uuid)
+        end: QPointF = self.target.getWidget().getPinScenePos(self.target_uuid)
+        assertRef(start)
+        assertRef(end)
+
+        widget = ConnectionWidget(self.uuid, start, end)
         return widget
 
     def getWidget(self) -> ConnectionWidget:
@@ -103,8 +110,8 @@ class NodeConnection():
         assertRef(self.source.getWidget())
         assertRef(self.target.getWidget())
 
-        start: QPointF = self.source.getWidget().getPinPosition(self.source_uuid)
-        end: QPointF = self.target.getWidget().getPinPosition(self.target_uuid)
+        start: QPointF = self.source.getWidget().getPinScenePos(self.source_uuid)
+        end: QPointF = self.target.getWidget().getPinScenePos(self.target_uuid)
         assertRef(start)
         assertRef(end)
 
@@ -306,7 +313,6 @@ class Node(QObject):
                 nodes.extend(child_nodes)
         nodes.append(self)
         nodes = list(OrderedDict.fromkeys(nodes))
-        nodes.reverse
         return nodes
 
     def getSelectedStatate(self) -> bool:
