@@ -34,15 +34,21 @@ class NodeGraphView(QGraphicsView):
         super().setScene(scene)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
-        """Event invoked when mouse wheel is scrolled"""
+        """
+        Event invoked when mouse wheel is scrolled
+        Zoom in/out of the graph every notch of the wheel movement.
+        Zoom factor increment is consistent regardless of current zoom level.
+        """
+        factor: float = 1.0
         if event.angleDelta().y() > 0:
             # Zoom in graph viewport
-            print("Zooming in")
-            self.scale(1.0 + self._scale_increment, 1.0 + self._scale_increment)
+            factor += (1.0 / self._scale) * self._scale_increment
         else:
             # Zoom out graph viewport
-            print("Zooming out")
-            self.scale(1.0 - self._scale_increment, 1.0 - self._scale_increment)
+            factor -= (1.0 / self._scale) * self._scale_increment
+
+        self.scale(factor, factor)
+        self._scale *= factor
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Event handler invoken when a mouse button is pressed on top of the view"""
@@ -64,7 +70,10 @@ class NodeGraphView(QGraphicsView):
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when mouse moves within the view"""
         if self._pan_mode:
+            # Pan amount is dependant on zoom factor to ensure smooth and
+            # responsive movement of the graph.
             mouse_delta = event.position() - self._pan_mouse_pos
+            mouse_delta *= 1.0 / self._scale
             self.translate(mouse_delta.x(), mouse_delta.y())
             self._pan_mouse_pos = event.position()
             return
