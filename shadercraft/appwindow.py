@@ -61,7 +61,7 @@ class AppWindow(QMainWindow):
         self.graph_view.setScene(self.graph_scene)
         self.graph_view.update()
         asp = self.graph_view.rect().width() / self.graph_view.rect().height()
-        self.graph_view.setSceneRect(0, 0, 2000, 2000/asp)
+        self.graph_view.setSceneRect(0, 0, 10000, 10000/asp)
 
     def onPaletteNodeRequested(self, node_desc: NodeClassDesc) -> None:
         """Event handler invoked when node palette panel requests node creation"""
