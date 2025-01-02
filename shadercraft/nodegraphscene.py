@@ -64,10 +64,9 @@ class NodeGraphScene(QGraphicsScene):
         # Remove active connections to given node
         in_cons: list[NodeConnection] = self.getNodeDownstreamConnections(node)
         out_cons: list[NodeConnection] = self.getNodeUpstreamConnections(node)
+
         for con in in_cons + out_cons:
             con.target.removeConnection(con.uuid)
-            if con.getWidget() is not None:
-                self.removeItem(con.getWidget())
 
         # Remove the actual node
         self.__nodes.remove(node)
