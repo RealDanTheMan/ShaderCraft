@@ -49,7 +49,7 @@ class NodePinShapeWidget(QWidget):
     def paintEvent(self, event) -> None:
         painter: QPainter = QPainter(self)
         painter.setRenderHint(QPainter.Antialiasing, True)
-        painter.setBrush(QColor(200, 10, 10))
+        painter.setBrush(QColor(0, 255, 0))
 
         x: int = self.rect().center().x() - self.radius
         y: int = self.rect().center().y() - self.radius
