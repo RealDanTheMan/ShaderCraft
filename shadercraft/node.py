@@ -115,10 +115,7 @@ class NodeConnection():
         assertRef(start)
         assertRef(end)
 
-        self.getWidget().start = start
-        self.getWidget().end = end
-        self.getWidget().prepareGeometryChange()
-        self.getWidget().update()
+        self.getWidget().updateConnectionPoints(start, end)
 
 
 class Node(QObject):

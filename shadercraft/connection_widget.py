@@ -51,3 +51,16 @@ class ConnectionWidget(QGraphicsWidget):
         exp = self.pin_radius * 2
 
         return QRectF(QPointF(left - exp, top - exp), QPointF(right + exp, bottom + exp))
+
+    def updateConnectionPoints(self, a: QPointF, b: QPointF) -> None:
+        """
+        Update end points of this connection widget.
+        Will trigger widger re-draw.
+        """
+        assertRef(a)
+        assertRef(b)
+
+        self.start = a
+        self.end = b
+        self.prepareGeometryChange()
+        self.update()
