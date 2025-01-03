@@ -214,17 +214,32 @@ class NodeGraphScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when mouse button is released inside graph scene"""
-        if event.button() == Qt.MouseButton.LeftButton:
-            widget: QWidget = self.getWidgetUnderMouse(event)
-            if widget is not None and isinstance(widget, NodePinShapeWidget):
-                node: Node = self.getNodeFromUUID(widget.node_uuid)
-                assertRef(node)
-                self.endPinDragDrop(node, widget.property_uuid)
+        widget: QWidget = self.getWidgetUnderMouse(event)
+        if widget is not None and isinstance(widget, NodePinShapeWidget):
+            node: Node = self.getNodeFromUUID(widget.node_uuid)
+            pin_uuid: UUID = widget.property_uuid
+            assertRef(node)
+            assertRef(pin_uuid)
+            if event.button() == Qt.MouseButton.LeftButton:
+                self.endPinDragDrop(node, pin_uuid)
+                event.accept()
                 return
+
+            if event.button() == Qt.MouseButton.RightButton:
+                # Disconnect exiting connection on right clicks
+                node_input: NodeIO = node.getNodeInput(pin_uuid)
+                if node_input is not None:
+                    con: NodeConnection = node.getConnectionFromInput(node_input)
+                    if con is not None:
+                        node.removeConnection(con.uuid)
+                        event.accept()
+                        return
+
         self.resetPinDragDrop()
         super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        """Event handler invoked when the mouse is moved inside the graph scene"""
         start_node: Node = self.__drag_pin_owner
         start_pin: UUID = self.__drag_pin
         if start_node is not None and start_pin is not None:
