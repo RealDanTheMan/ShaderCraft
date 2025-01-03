@@ -5,11 +5,18 @@ from uuid import UUID, uuid1
 import PySide6
 from .node import Node, NodeConnection, NodeIO
 from .node_widget import NodeProxyWidget, NodePinShapeWidget
+from .connection_widget import ConnectionWidget
 from .shadernodes import FloatShaderNode, MulShaderNode, OutputShaderNode
 from .asserts import assertRef, assertFalse, assertTrue
-from PySide6.QtWidgets import QGraphicsScene, QWidget, QGraphicsItem, QGraphicsProxyWidget
+from PySide6.QtWidgets import (
+    QGraphicsScene,
+    QWidget,
+    QGraphicsItem,
+    QGraphicsProxyWidget,
+    QGraphicsView
+)
 from PySide6.QtGui import QMouseEvent
-from PySide6.QtCore import Signal, Slot, QObject, QPoint, Qt
+from PySide6.QtCore import Signal, Slot, QObject, QPoint, Qt, QPointF
 
 
 class NodeGraphScene(QGraphicsScene):
@@ -27,8 +34,23 @@ class NodeGraphScene(QGraphicsScene):
         self.__drag_pin_owner: Optional[Node] = None
         self.__drop_pin: Optional[UUID] = None
         self.__drop_pin_owner: Optional[Node] = None
+        self.__drag_drop_preview: Optional[ConnectionWidget] = None
         self.__selected_node: Optional[Node] = None
         self.__addTestNodes()
+
+    def getView(self) -> Optional[QGraphicsView]:
+        """Get handle to the first view which this scene is bound to"""
+        if len(self.views()) > 0:
+            return self.views()[0]
+        return None
+
+    def screenCoordsToScene(self, screen_coords: QPoint) -> QPointF:
+        """Get position in scene coordinates from given screen position"""
+        assertRef(screen_coords)
+        view: QGraphicsView = self.getView()
+        assertRef(view)
+        local_pos: QPointF = view.mapFromGlobal(screen_coords)
+        return view.mapToScene(local_pos)
 
     def getSelectedNode(self) -> Optional[Node]:
         """Get currently selected node in the graph"""
@@ -187,6 +209,7 @@ class NodeGraphScene(QGraphicsScene):
                 assertRef(node)
                 self.beginPinDragDrop(node, widget.property_uuid)
                 return
+        self.resetPinDragDrop()
         super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -198,7 +221,23 @@ class NodeGraphScene(QGraphicsScene):
                 assertRef(node)
                 self.endPinDragDrop(node, widget.property_uuid)
                 return
+        self.resetPinDragDrop()
         super().mouseReleaseEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        start_node: Node = self.__drag_pin_owner
+        start_pin: UUID = self.__drag_pin
+        if start_node is not None and start_pin is not None:
+            start: QPoint = start_node.getWidget().getPinScenePos(start_pin)
+            end: QPoint = self.screenCoordsToScene(event.screenPos())
+            assertRef(start)
+            assertRef(end)
+            if self.__drag_drop_preview is None:
+                self.__drag_drop_preview = ConnectionWidget(uuid1(), start, end)
+                self.addItem(self.__drag_drop_preview)
+            else:
+                self.__drag_drop_preview.updateConnectionPoints(start, end)
+        super().mouseMoveEvent(event)
 
     def beginPinDragDrop(self, node: Node, pin: UUID) -> None:
         """Start of node pin drag & drop event flow"""
@@ -227,6 +266,11 @@ class NodeGraphScene(QGraphicsScene):
         self.__drag_pin_owner = None
         self.__drop_pin = None
         self.__drop_pin_owner = None
+
+        if self.__drag_drop_preview is not None:
+            self.removeItem(self.__drag_drop_preview)
+            self.__drag_drop_preview.deleteLater()
+            self.__drag_drop_preview = None
 
     def finalisePinDragDrop(self) -> None:
         """Finalise node pin drag & drop event and create connection if valid"""
