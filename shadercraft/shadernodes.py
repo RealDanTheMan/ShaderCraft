@@ -93,7 +93,6 @@ class FloatShaderNode(ShaderNodeBase):
     def __init__(self) -> None:
         super().__init__()
         self.name = "ShaderFloadNode"
-        self.label = "Shader Float"
         self.default_input_val: float = 0.0
 
         self.float_input = NodeIO.create("FloatInput", "In")
