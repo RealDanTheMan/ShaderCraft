@@ -60,7 +60,7 @@ class NodeGraphView(QGraphicsView):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when mouse button is release on top of the view"""
-        if event.button() == Qt.MouseButton.RightButton and self._pan_ongoing:
+        if event.button() == Qt.MouseButton.RightButton and self._pan_enabled:
             self.disableCameraPan()
         super().mouseReleaseEvent(event)
 
@@ -89,6 +89,7 @@ class NodeGraphView(QGraphicsView):
     def enableCameraPan(self, pos_origin: QPoint) -> None:
         """Enable mouse move event to pan the view of the graph"""
         assertRef(pos_origin)
+        print("Enabling mouse pan mode")
         self._pan_enabled = True
         self._pan_mouse_pos = pos_origin
 
@@ -102,5 +103,6 @@ class NodeGraphView(QGraphicsView):
 
     def disableCameraPan(self) -> None:
         """Disable mouse move events triggering view panning"""
+        print("Disabling mouse pan mode")
         self._pan_enabled = False
         self._pan_ongoing = False
