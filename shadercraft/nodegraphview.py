@@ -1,7 +1,7 @@
 from __future__ import annotations
 from PySide6.QtGui import QWheelEvent, QMouseEvent, QKeyEvent
 from PySide6.QtWidgets import QGraphicsView
-from PySide6.QtCore import QPointF, Qt
+from PySide6.QtCore import QPointF, Qt, QPoint
 
 from .asserts import assertRef, assertTrue
 from .nodegraphscene import NodeGraphScene
@@ -25,7 +25,9 @@ class NodeGraphView(QGraphicsView):
         self.__scene: NodeGraphScene = None
         self._scale: float = 1.0
         self._scale_increment: float = 0.1
-        self._pan_mode: bool = False
+
+        self._pan_enabled: bool = False
+        self._pan_ongoing: bool = False
         self._pan_mouse_pos: QPointF = QPointF()
 
     def setScene(self, scene: NodeGraphScene):
@@ -53,29 +55,26 @@ class NodeGraphView(QGraphicsView):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Event handler invoken when a mouse button is pressed on top of the view"""
         if event.button() == Qt.MouseButton.RightButton:
-            print("Entering mouse panning mode")
-            self._pan_mode = True
-            self._pan_mouse_pos = event.position()
-        else:
-            super().mousePressEvent(event)
+            self.enableCameraPan(event.position())
+        super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when mouse button is release on top of the view"""
-        if event.button() == Qt.MouseButton.RightButton:
-            print("Exiting mouse panning mode")
-            self._pan_mode = False
-        else:
-            super().mouseReleaseEvent(event)
+        if event.button() == Qt.MouseButton.RightButton and self._pan_ongoing:
+            self.disableCameraPan()
+        super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when mouse moves within the view"""
-        if self._pan_mode:
+        if self._pan_enabled:
+            self.doCameraPan(event.position())
             # Pan amount is dependant on zoom factor to ensure smooth and
             # responsive movement of the graph.
             mouse_delta = event.position() - self._pan_mouse_pos
             mouse_delta *= 1.0 / self._scale
             self.translate(mouse_delta.x(), mouse_delta.y())
             self._pan_mouse_pos = event.position()
+            self._pan_ongoing = True
             return
         super().mouseMoveEvent(event)
 
@@ -86,3 +85,22 @@ class NodeGraphView(QGraphicsView):
             self.__scene.deleteSelectedNode()
             return
         super().keyPressEvent(event)
+
+    def enableCameraPan(self, pos_origin: QPoint) -> None:
+        """Enable mouse move event to pan the view of the graph"""
+        assertRef(pos_origin)
+        self._pan_enabled = True
+        self._pan_mouse_pos = pos_origin
+
+    def doCameraPan(self, mouse_pos: QPoint) -> None:
+        """Pan the view of the graph based on delta between current and last mouse position"""
+        self._pan_ongoing = True
+        mouse_delta: QPoint = mouse_pos - self._pan_mouse_pos
+        mouse_delta *= 1.0 / self._scale
+        self.translate(mouse_delta.x(), mouse_delta.y())
+        self._pan_mouse_pos = mouse_pos
+
+    def disableCameraPan(self) -> None:
+        """Disable mouse move events triggering view panning"""
+        self._pan_enabled = False
+        self._pan_ongoing = False
