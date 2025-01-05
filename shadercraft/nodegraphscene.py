@@ -189,13 +189,13 @@ class NodeGraphScene(QGraphicsScene):
 
         return connections
 
-    def getWidgetUnderMouse(self, mouse_event: QMouseEvent) -> Optional[QWidget]:
+    def getWidgetUnderMouse(self, scene_pos: QPointF) -> Optional[QWidget]:
         """Get hadle to the windget currently under mouse pointer"""
-        item: QGraphicsItem = self.itemAt(mouse_event.scenePos(), self.views()[0].transform())
+        item: QGraphicsItem = self.itemAt(scene_pos, self.views()[0].transform())
         if item is not None and isinstance(item, QGraphicsProxyWidget):
             if item.widget() is None:
                 return None
-            pos: QPoint = item.widget().mapFromGlobal(mouse_event.screenPos())
+            pos: QPoint = item.mapFromScene(scene_pos)
             widget: QWidget = item.widget().childAt(pos)
             return widget
         return None
@@ -203,7 +203,7 @@ class NodeGraphScene(QGraphicsScene):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when mouse button press happens inside the graph scene"""
         if event.button() == Qt.MouseButton.LeftButton:
-            widget: QWidget = self.getWidgetUnderMouse(event)
+            widget: QWidget = self.getWidgetUnderMouse(event.scenePos())
             if widget is not None and isinstance(widget, NodePinShapeWidget):
                 node: Node = self.getNodeFromUUID(widget.node_uuid)
                 assertRef(node)
@@ -214,7 +214,7 @@ class NodeGraphScene(QGraphicsScene):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         """Event handler invoked when mouse button is released inside graph scene"""
-        widget: QWidget = self.getWidgetUnderMouse(event)
+        widget: QWidget = self.getWidgetUnderMouse(event.scenePos())
         if widget is not None and isinstance(widget, NodePinShapeWidget):
             node: Node = self.getNodeFromUUID(widget.node_uuid)
             pin_uuid: UUID = widget.property_uuid
