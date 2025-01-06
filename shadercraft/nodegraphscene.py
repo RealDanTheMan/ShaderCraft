@@ -36,7 +36,6 @@ class NodeGraphScene(QGraphicsScene):
         self.__drop_pin_owner: Optional[Node] = None
         self.__drag_drop_preview: Optional[ConnectionWidget] = None
         self.__selected_node: Optional[Node] = None
-        self.__addTestNodes()
 
     def getView(self) -> Optional[QGraphicsView]:
         """Get handle to the first view which this scene is bound to"""
@@ -103,7 +102,7 @@ class NodeGraphScene(QGraphicsScene):
             return True
         return False
 
-    def __addTestNodes(self) -> None:
+    def addDefaultNodes(self) -> None:
         """Create and add set of node to the scene, usefull for testing"""
         node0 = MulShaderNode()
         node1 = FloatShaderNode()

@@ -60,6 +60,7 @@ class AppWindow(QMainWindow):
         self.graph_scene: NodeGraphScene = NodeGraphScene()
         self.graph_view.setScene(self.graph_scene)
         self.graph_view.update()
+        self.graph_scene.addDefaultNodes()
         asp = self.graph_view.rect().width() / self.graph_view.rect().height()
         self.graph_view.setSceneRect(0, 0, 10000, 10000/asp)
 
