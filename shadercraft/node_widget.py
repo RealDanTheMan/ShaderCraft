@@ -205,14 +205,11 @@ class NodeWidget(QWidget):
         assertRef(text)
         self.node_name.setText(text)
 
-    def getPinScreenPosition(self, uuid: UUID) -> Optional[QPointF]:
-        """Get local postion of pin widget matching given UUID"""
-        matches: list[NodePropertyWidget] = [i for i in self.property_widgets if i.property_uuid == uuid]
-        if len(matches) > 0:
-            assertTrue(len(matches) == 1)
-            pin_widget: NodePinShapeWidget = matches[0].pin_widget
-            local_pos: QPointF = pin_widget.rect().center()
-            return pin_widget.mapToGlobal(local_pos)
+    def getPinWidget(self, uuid: UUID) -> Optional[NodePinShapeWidget]:
+        """Get handle to the pin widget which matches its property UUID"""
+        for widget in self.property_widgets:
+            if widget.property_uuid == uuid:
+                return widget.pin_widget
         return None
 
 
@@ -231,9 +228,8 @@ class NodeProxyWidget(QGraphicsWidget):
         self.min_size: int = 160
         self.setMinimumSize(self.min_size, self.min_size)
         self.__widget: NodeWidget = NodeWidget(node_uuid, inputs, outputs)
-        self.__proxy: QGraphicsProxyWidget = QGraphicsProxyWidget()
+        self.__proxy: QGraphicsProxyWidget = QGraphicsProxyWidget(parent=self)
         self.__proxy.setWidget(self.__widget)
-        self.__proxy.setParentItem(self)
 
         self.uuid = uuid1()
         self.setZValue(self.depth_order)
@@ -274,13 +270,9 @@ class NodeProxyWidget(QGraphicsWidget):
         assertRef(uuid)
         assertRef(self.getWidget())
 
-        screen_pos: QPoint = self.__widget.getPinScreenPosition(uuid)
-        if screen_pos is not None:
-            assertRef(self.scene())
-            assertTrue(len(self.scene().views()) == 1)
-
-            view: QGraphicsView = self.scene().views()[0]
-            view_pos: QPointF = view.mapFromGlobal(screen_pos)
-            scene_pos: QPointF = view.mapToScene(view_pos)
-            return scene_pos
+        pin: NodePinShapeWidget = self.__widget.getPinWidget(uuid)
+        if pin is not None:
+            center: QPoint = pin.rect().center()
+            proxy_pos: QPoint = pin.mapTo(self.__widget, center)
+            return self.mapToScene(proxy_pos)
         return None
