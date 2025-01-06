@@ -1,4 +1,5 @@
 from typing import Type
+import logging as Log
 from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QMainWindow, QVBoxLayout
 from PySide6.QtCore import Qt
 
@@ -66,7 +67,7 @@ class AppWindow(QMainWindow):
 
     def onPaletteNodeRequested(self, node_desc: NodeClassDesc) -> None:
         """Event handler invoked when node palette panel requests node creation"""
-        print(f"Adding new '{node_desc.label}' node to the graph on palette request")
+        Log.debug(f"Adding new '{node_desc.label}' node to the graph on palette request")
         assertRef(node_desc)
         assertTrue(node_desc.node_type)
 
@@ -78,10 +79,10 @@ class AppWindow(QMainWindow):
         Event handler invoked when genrate shader code menu item is clicked.
         For the time being we simply dump the shader code to the console.
         """
-        print("Generating shader code")
+        Log.info("Generating shader code")
         output_nodes: OutputShaderNode = self.graph_scene.getAllNodeOfClass(OutputShaderNode)
         if output_nodes is None:
-            print("Attempting to generate shader code with no output node in the scene, aborting.")
+            Log.warning("Attempting to generate shader code with no output node in the scene, aborting.")
             return
         assertTrue(len(output_nodes) == 1)
         output_node: Node = output_nodes[0]
@@ -95,4 +96,4 @@ class AppWindow(QMainWindow):
             print(shader_src)
             print("\r\n")
 
-        print("Done")
+        Log.info("Done")

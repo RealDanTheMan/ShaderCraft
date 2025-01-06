@@ -1,4 +1,5 @@
 from __future__ import annotations
+import logging as Log
 from PySide6.QtGui import QWheelEvent, QMouseEvent, QKeyEvent
 from PySide6.QtWidgets import QGraphicsView
 from PySide6.QtCore import QPointF, Qt, QPoint
@@ -81,7 +82,7 @@ class NodeGraphView(QGraphicsView):
     def keyPressEvent(self, event: QKeyEvent) -> None:
         """Event handler invoked when key is pressed while node graph is in focus"""
         if event.key() == Qt.Key_Delete and self.__scene is not None:
-            print("Attempting to delete selected node")
+            Log.debug("Attempting to delete selected node")
             self.__scene.deleteSelectedNode()
             return
         super().keyPressEvent(event)
@@ -89,7 +90,7 @@ class NodeGraphView(QGraphicsView):
     def enableCameraPan(self, pos_origin: QPoint) -> None:
         """Enable mouse move event to pan the view of the graph"""
         assertRef(pos_origin)
-        print("Enabling mouse pan mode")
+        Log.debug("Enabling mouse pan mode")
         self._pan_enabled = True
         self._pan_mouse_pos = pos_origin
 
@@ -103,6 +104,6 @@ class NodeGraphView(QGraphicsView):
 
     def disableCameraPan(self) -> None:
         """Disable mouse move events triggering view panning"""
-        print("Disabling mouse pan mode")
+        Log.debug("Disabling mouse pan mode")
         self._pan_enabled = False
         self._pan_ongoing = False

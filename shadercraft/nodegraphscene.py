@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import Optional
 from uuid import UUID, uuid1
-
+import logging as Log
 import PySide6
 from .node import Node, NodeConnection, NodeIO
 from .node_widget import NodeProxyWidget, NodePinShapeWidget
@@ -72,7 +72,7 @@ class NodeGraphScene(QGraphicsScene):
             node.initWidget()
 
         self.addItem(node.getWidget())
-        print(f"NodeGraphScene: Adding new node -> {node.uuid}")
+        Log.info(f"NodeGraphScene: Adding new node -> {node.uuid}")
 
     def deleteNode(self, node: Node) -> None:
         """
@@ -80,7 +80,7 @@ class NodeGraphScene(QGraphicsScene):
         Any connection to or from the node will be removed as well.
         """
         assertTrue(node in self.__nodes, "Node does not exists within the node graph!")
-        print(f"Removing node from node graph: {node.uuid}")
+        Log.info(f"Removing node from node graph: {node.uuid}")
 
         # Remove active connections to given node
         in_cons: list[NodeConnection] = self.getNodeDownstreamConnections(node)
@@ -257,7 +257,7 @@ class NodeGraphScene(QGraphicsScene):
         """Start of node pin drag & drop event flow"""
         assertRef(node)
         assertRef(pin)
-        print(f"Node pin drag registered [node:{node}] [pin:{pin}]")
+        Log.debug(f"Node pin drag registered [node:{node}] [pin:{pin}]")
 
         self.__drag_pin = pin
         self.__drag_pin_owner = node
@@ -268,7 +268,7 @@ class NodeGraphScene(QGraphicsScene):
         """End of node pin drag & drop event flow"""
         assertRef(node)
         assertRef(pin)
-        print(f"Node pin drop registered [node:{node}] [pin:{pin}]")
+        Log.debug(f"Node pin drop registered [node:{node}] [pin:{pin}]")
 
         self.__drop_pin = pin
         self.__drop_pin_owner = node
@@ -294,25 +294,25 @@ class NodeGraphScene(QGraphicsScene):
         target_pin: UUID = self.__drop_pin
 
         if source_node is None or source_pin is None:
-            print("Aborting pin drag & drop: source pin or its owner node are invalid")
+            Log.debug("Aborting pin drag & drop: source pin or its owner node are invalid")
             self.resetPinDragDrop()
             return
 
         if target_node is None or target_pin is None:
-            print("Aborting pin drag & drop: target pin or its owner node are invalid")
+            Log.debug("Aborting pin drag & drop: target pin or its owner node are invalid")
             self.resetPinDragDrop()
             return
 
         if source_node.getNodeOutput(source_pin) is None:
-            print("Aborting pin drag & drop: source pin is not of output type")
+            Log.debug("Aborting pin drag & drop: source pin is not of output type")
             return
 
         if target_node.getNodeInput(target_pin) is None:
-            print("Aborting pin drag & drop: target pin is not of input type")
+            Log.debug("Aborting pin drag & drop: target pin is not of input type")
             return
 
         if source_node.uuid == target_node.uuid:
-            print("Aborting pin drag & drop: pins share parents")
+            Log.debug("Aborting pin drag & drop: pins share parents")
             self.resetPinDragDrop()
             return
 
@@ -335,7 +335,7 @@ class NodeGraphScene(QGraphicsScene):
         assertRef(source_pin)
         assertRef(target_node)
         assertRef(target_pin)
-        print(f"Attempting node connection: {source_pin} -> {target_pin}")
+        Log.debug(f"Attempting node connection: {source_pin} -> {target_pin}")
 
         assertTrue(source_node.uuid != target_node, "Attempting to connect node to itself")
 
@@ -370,10 +370,10 @@ class NodeGraphScene(QGraphicsScene):
         assertRef(node)
         assertTrue(isinstance(node, Node))
         if selected:
-            print("Updating selected node")
+            Log.debug("Updating selected node")
             self.__selected_node = node
         elif node is self.__selected_node and not selected:
-            print("Clearing selected node")
+            Log.debug("Clearing selected node")
             self.__selected_node = None
 
     def assignNodeName(self, node: Node) -> str:

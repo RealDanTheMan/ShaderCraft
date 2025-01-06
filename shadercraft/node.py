@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from collections import OrderedDict
 from uuid import UUID, uuid1
 from enum import Enum
+import logging as Log
 from PySide6.QtCore import QObject, QPointF, Slot, Signal
 
 from .connection_widget import ConnectionWidget
@@ -229,7 +230,7 @@ class Node(QObject):
         assertRef(src_uuid)
 
         if self.getConnection(uuid):
-            print("Connection rejected, connection already exists for this input")
+            Log.debug("Connection rejected, connection already exists for this input")
             return False
         con = NodeConnection(src, src_uuid, self, uuid)
         self.__connections.append(con)
@@ -242,7 +243,7 @@ class Node(QObject):
         assertRef(uuid)
         con: NodeConnection = self.getConnection(uuid)
         if con is not None:
-            print(f"Removing node connection: {uuid}")
+            Log.debug(f"Removing node connection: {uuid}")
             self.__connections.remove(con)
             self.connectionRemoved.emit(con)
 
