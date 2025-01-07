@@ -1,4 +1,6 @@
 import sys
+import os
+from datetime import datetime
 import logging as Log
 from PySide6.QtWidgets import QApplication
 
@@ -24,11 +26,13 @@ def main() -> int:
     """Main entry point to the application"""
     print('Starting Shadercraft')
 
-    app: QApplication = QApplication(sys.argv)
-    log_file: str = "shadercraft.log"
+    os.makedirs("logs", exist_ok=True)
+    timestamp: str = datetime.now().strftime("%Y_%m_%d-%H_%M_%S")
+    log_file: str = f"logs/shadercraft-{timestamp}.log"
     initLogger(file=log_file)
-    
     Log.info(f"Log file created -> {log_file}")
+
+    app: QApplication = QApplication(sys.argv)
     Log.info("Creaing app window")
 
     window = AppWindow()
