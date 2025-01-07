@@ -110,6 +110,7 @@ class AppWindow(QMainWindow):
         except Exception as e:
             Log.error(f"Failed to parse logging file -> {log_file}")
             print(e)
+        self.log_timer.start(self.log_refresh_rate)
 
 
     def onPaletteNodeRequested(self, node_desc: NodeClassDesc) -> None:
