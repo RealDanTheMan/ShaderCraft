@@ -1,7 +1,15 @@
-from typing import Type
+import os
+from typing import Type, Optional
 import logging as Log
-from PySide6.QtWidgets import QApplication, QGraphicsScene, QGraphicsView, QMainWindow, QVBoxLayout
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
+from PySide6.QtWidgets import (
+    QApplication,
+    QGraphicsScene,
+    QGraphicsView,
+    QMainWindow,
+    QVBoxLayout,
+    QTextEdit
+)
 
 from .asserts import assertTrue, assertRef
 from .node import Node, NodeClassDesc
@@ -15,9 +23,14 @@ from .nodepalette import NodePaletteWidget
 class AppWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
+        self.log_last_pos: int = 0
+        self.log_refresh_rate: int = 100
+        self.log_timer: QTimer = QTimer(self)
+
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        self._initLogView()
         self._initGraph()
         self._initScene()
         self._initPalette()
@@ -65,6 +78,40 @@ class AppWindow(QMainWindow):
         asp = self.graph_view.rect().width() / self.graph_view.rect().height()
         self.graph_view.setSceneRect(0, 0, 10000, 10000/asp)
 
+    def _initLogView(self) -> None:
+        self.log_view: QTextEdit = QTextEdit(parent=self)
+        self.log_view.setObjectName("LogView")
+        self.log_view.setReadOnly(True)
+        self.ui.OutputViewFrame.setLayout(QVBoxLayout())
+        self.ui.OutputViewFrame.layout().addWidget(self.log_view)
+        self.updateLogView()
+
+        self.log_timer.timeout.connect(self.updateLogView)
+        self.log_timer.startTimer(self.log_refresh_rate)
+
+    def updateLogView(self) -> None:
+        """
+        Update the log view contents.
+        Contents of the log view are sourced form active app log file.
+        """
+        assertRef(self.log_view)
+        log_file: str = self.getLogFile()
+        if not os.path.exists(log_file):
+            Log.error(f"Failed to located active log file -> {log_file}")
+            return
+
+        try:
+            with open(log_file, "r") as file:
+                file.seek(self.log_last_pos)
+                lines: list[str] = file.readlines()
+                for line in lines:
+                    self.log_view.append(line)
+                self.log_last_pos = file.tell()
+        except Exception as e:
+            Log.error(f"Failed to parse logging file -> {log_file}")
+            print(e)
+
+
     def onPaletteNodeRequested(self, node_desc: NodeClassDesc) -> None:
         """Event handler invoked when node palette panel requests node creation"""
         Log.debug(f"Adding new '{node_desc.label}' node to the graph on palette request")
@@ -97,3 +144,11 @@ class AppWindow(QMainWindow):
             print("\r\n")
 
         Log.info("Done")
+
+    @staticmethod
+    def getLogFile() -> Optional[str]:
+        """Get first active log file"""
+        for handler in Log.getLogger().handlers:
+            if isinstance(handler, Log.FileHandler):
+                return handler.baseFilename
+        return None
