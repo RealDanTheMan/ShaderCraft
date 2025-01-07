@@ -64,4 +64,13 @@ app_style = """
     QListItemWidget {
         background-color: white;
     }
+
+    #LogView {
+        background-color: rgb(40, 10, 30);
+        color: rgb(160, 160, 160);
+        font-family: "Fira Code";
+        font-size: 12px;
+        font-weight: bold;
+        line-height: 1.0;
+    }
 """
