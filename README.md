@@ -1,5 +1,5 @@
 # ShaderCraft
-Python based node graph editor for creating GLSL shaders
+Python/QT based node graph editor for creating GLSL shaders
 
 
 <br>
