@@ -248,7 +248,7 @@ class NodeProxyWidget(QGraphicsWidget):
     def itemChange(self, change, value):
         """Override for handling internal widget changes"""
         if change == QGraphicsItem.ItemPositionChange:
-            self.positionChanged.emit(self.scenePos())
+            self.positionChanged.emit(value)
 
         if change == QGraphicsItem.ItemSelectedChange:
             if value:
@@ -258,12 +258,6 @@ class NodeProxyWidget(QGraphicsWidget):
             self.selectionChanged.emit(value)
 
         return super().itemChange(change, value)
-
-    def mouseReleaseEvent(self, event):
-        """Override for handling mouse releases performed on this widget"""
-        super().mouseReleaseEvent(event)
-        if event.button is Qt.MouseButton.LeftButton:
-            self.positionChanged.emit(self.scenePos())
 
     def getPinScenePos(self, uuid: UUID) -> Optional[QPointF]:
         """Get graph scene relative position of node pin matching given UUID"""
