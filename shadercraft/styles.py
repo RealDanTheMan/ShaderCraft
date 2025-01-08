@@ -73,4 +73,22 @@ app_style = """
         font-weight: bold;
         line-height: 1.0;
     }
+
+    #PropertyPanelWidget QGroupBox QLabel {
+        color: rgb(180, 180, 180);
+    }
+
+    #PropertyWidget QFrame {
+        margin: 0px;
+        padding: 0px;
+    }
+
+    #PropertyWidget QLabel {
+        color: rgb(180, 180, 180);
+    }
+
+    #PropertyWidget QLineEdit {
+        background-color: rgb(20, 20, 20);
+        color: rgb(180, 180, 180);
+    }
 """

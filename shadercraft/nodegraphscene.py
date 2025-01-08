@@ -24,6 +24,8 @@ class NodeGraphScene(QGraphicsScene):
     Class that represents node graph scene.
     All the nodes and their connections are stored in the scene
     """
+    selected_node_changed: QSignal = Signal(Node)
+
     def __init__(self):
         """Default constructor"""
         super().__init__()
@@ -375,6 +377,7 @@ class NodeGraphScene(QGraphicsScene):
         elif node is self.__selected_node and not selected:
             Log.debug("Clearing selected node")
             self.__selected_node = None
+        self.selected_node_changed.emit(self.__selected_node)
 
     def assignNodeName(self, node: Node) -> str:
         """Generates unqiue node name"""

@@ -18,6 +18,7 @@ from .windowbase import Ui_MainWindow
 from .nodegraphscene import NodeGraphScene
 from .nodegraphview import NodeGraphView
 from .nodepalette import NodePaletteWidget
+from .propertypanel import PropertyPanelWidget
 
 
 class AppWindow(QMainWindow):
@@ -34,6 +35,7 @@ class AppWindow(QMainWindow):
         self._initGraph()
         self._initScene()
         self._initPalette()
+        self._initPropertyPanel()
         self.ui.actionGenerate_Shader_Code.triggered.connect(self.onGenerateShaderCode)
 
     def _initPalette(self) -> None:
@@ -72,6 +74,7 @@ class AppWindow(QMainWindow):
         """
         assertRef(self.graph_view)
         self.graph_scene: NodeGraphScene = NodeGraphScene()
+        self.graph_scene.selected_node_changed.connect(self.onGraphNodeSelectionChanged)
         self.graph_view.setScene(self.graph_scene)
         self.graph_view.update()
         self.graph_scene.addDefaultNodes()
@@ -88,6 +91,11 @@ class AppWindow(QMainWindow):
 
         self.log_timer.timeout.connect(self.updateLogView)
         self.log_timer.startTimer(self.log_refresh_rate)
+
+    def _initPropertyPanel(self) -> None:
+        self.property_panel: PropertyPanelWidget = PropertyPanelWidget(self)
+        self.ui.PropertiesPanelFrame.setLayout(QVBoxLayout())
+        self.ui.PropertiesPanelFrame.layout().addWidget(self.property_panel)
 
     def updateLogView(self) -> None:
         """
@@ -145,6 +153,15 @@ class AppWindow(QMainWindow):
             print("\r\n")
 
         Log.info("Done")
+
+    def onGraphNodeSelectionChanged(self, node: Node) -> None:
+        """
+        Event handler invoked when selected node changes inside graph scene.
+        We use this trigger to update property panel with selected node values.
+        """
+        assertRef(self.property_panel)
+        self.property_panel.setActiveNode(node)
+        self.property_panel.fetchNodeValues()
 
     @staticmethod
     def getLogFile() -> Optional[str]:
