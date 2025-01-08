@@ -14,7 +14,7 @@ from PySide6.QtWidgets import (
     QPushButton
 )
 
-from .asserts import assertRef, assertTrue
+from .asserts import assertRef, assertTrue, assertType
 from .node import Node
 
 class PropertyPanelWidget(QWidget):
@@ -145,6 +145,6 @@ class PropertyWidget(QWidget):
     def setValue(self, value: object) -> None:
         """Set property widget value"""
         assertRef(value)
-        assertTrue(isinstance(value, self.property_type))
+        assertType(value, self.property_type)
         self.property_value = value
         self.value_widget.setText(str(value))

@@ -116,10 +116,10 @@ class NodeGraphScene(QGraphicsScene):
         self.addNode(node2)
         self.addNode(node3)
 
-        node0.setPosition(-200, 200)
-        node1.setPosition(300, -100)
-        node2.setPosition(0, 0)
-        node3.setPosition(500, 0)
+        node0.setPosition(-200.0, 200.0)
+        node1.setPosition(300.0, -100.0)
+        node2.setPosition(0.0, 0.0)
+        node3.setPosition(500.0, 0.0)
 
     def getAllNodes(self) -> list[Node]:
         """Get list of all nodes present in the graph"""
