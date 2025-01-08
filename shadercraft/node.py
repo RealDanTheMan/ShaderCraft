@@ -9,7 +9,7 @@ from PySide6.QtCore import QObject, QPointF, Slot, Signal
 
 from .connection_widget import ConnectionWidget
 from .node_widget import NodeProxyWidget, NodePropetyInfo
-from .asserts import assertRef, assertTrue
+from .asserts import assertRef, assertTrue, assertType
 
 
 @dataclass
@@ -283,6 +283,9 @@ class Node(QObject):
     @Slot(QPointF)
     def onWidgetPositionChanged(self, value: QPointF) -> None:
         """Event handler invoked when bound widget changes position"""
+        assertRef(value)
+        assertType(value, QPointF)
+
         self.posx = value.x()
         self.posy = value.y()
         self.positionChanged.emit(QPointF(self.posx, self.posy))
@@ -295,6 +298,9 @@ class Node(QObject):
 
     def setPosition(self, x: float, y: float) -> None:
         """Upadate position of this node, will also update widget position"""
+        assertType(x, float)
+        assertType(y, float)
+
         self.posx = x
         self.posy = y
         if self.widget:
