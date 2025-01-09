@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 import logging as Log
-from PySide6.QtCore import QSize, Signal
+from PySide6.QtCore import QSize, Signal, QPointF
 from PySide6.QtWidgets import (
     QSizePolicy,
     QWidget, 
@@ -85,19 +85,28 @@ class PropertyPanelWidget(QWidget):
 
     def setActiveNode(self, node: Node) -> None:
         """Set active node bound to this property panel"""
+        if self.__active_node is node:
+            return
+
         Log.debug(f"Setting property panel active node -> {node}")
+        if self.__active_node is not None:
+            self.__active_node.positionChanged.disconnect(self.onActiveNodeMoved)
+
         self.__active_node = node
+        if self.__active_node is not None:
+            self.__active_node.positionChanged.connect(self.onActiveNodeMoved)
 
     def getActiveNode(self) -> Optional[Node]:
         """Get active node bound to this property panel"""
         return self.__active_node
 
     def fetchNodeValues(self):
+        """Updates property panel values from currently active node"""
         node: Node = self.getActiveNode()
         if node is None:
             return
 
-        Log.info("Fetching active node property panel values")
+        #Log.info("Fetching active node property panel values")
         self.type_property.setTextValue(node.label)
         self.name_property.setTextValue(node.name)
         self.uuid_property.setTextValue(str(node.uuid))
@@ -105,10 +114,9 @@ class PropertyPanelWidget(QWidget):
         self.positiony_property.setValue(node.posy)
 
     def onGeneralPropertyValueChanged(self, widget: QWidget, value: object) -> None:
+        """Event handler invoked when one of the panel general properties changes value"""
         if self.__active_node is None:
             return
-
-        print(f"Property panel property changed -> {widget} = {value}")
 
         if widget == self.positionx_property:
             self.__active_node.setPosition(value, self.__active_node.posy)
@@ -117,3 +125,9 @@ class PropertyPanelWidget(QWidget):
         if widget == self.positiony_property:
             self.__active_node.setPosition(self.__active_node.posx, value)
             return
+
+    def onActiveNodeMoved(self, pos: QPointF) -> None:
+        """Event handler invoked when the active node changes position"""
+        assertType(pos, QPointF)
+        assertRef(self.__active_node)
+        self.fetchNodeValues()
