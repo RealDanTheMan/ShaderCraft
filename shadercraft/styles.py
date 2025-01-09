@@ -77,18 +77,4 @@ app_style = """
     #PropertyPanelWidget QGroupBox QLabel {
         color: rgb(180, 180, 180);
     }
-
-    #PropertyWidget QFrame {
-        margin: 0px;
-        padding: 0px;
-    }
-
-    #PropertyWidget QLabel {
-        color: rgb(180, 180, 180);
-    }
-
-    #PropertyWidget QLineEdit {
-        background-color: rgb(20, 20, 20);
-        color: rgb(180, 180, 180);
-    }
 """
