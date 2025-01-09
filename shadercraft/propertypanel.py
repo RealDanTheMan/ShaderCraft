@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 import logging as Log
-from PySide6.QtCore import QSize, Signal, QPointF
+from PySide6.QtCore import QSize, Signal, QPointF, Qt
 from PySide6.QtWidgets import (
     QSizePolicy,
     QWidget, 
@@ -45,6 +45,7 @@ class PropertyPanelWidget(QWidget):
         self.general_box.setLayout(QVBoxLayout())
         self.general_box.layout().setContentsMargins(0, 0, 0, 10)
         self.general_box.layout().setSpacing(10)
+        self.general_box.layout().setAlignment(Qt.AlignTop)
 
         self.type_property: TextProperty = TextProperty("Node Type", parent=self.general_box)
         self.name_property: TextProperty = TextProperty("Node Name", parent=self.general_box)
@@ -80,8 +81,27 @@ class PropertyPanelWidget(QWidget):
         self.input_properties_box: QGroupBox = QGroupBox("Input Properties", parent=self)
         self.input_properties_box.setCheckable(False)
         self.input_properties_box.setChecked(False)
-        self.input_properties_box.setSizePolicy(QSizePolicy.Preferred, QSizePolicy.Expanding)
+        self.input_properties_box.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        self.input_properties_box.setLayout(QVBoxLayout())
+        self.input_properties_box.layout().setContentsMargins(0, 0, 0, 10)
+        self.input_properties_box.layout().setSpacing(10)
+        self.input_properties_box.layout().setAlignment(Qt.AlignTop)
         self.layout().addWidget(self.input_properties_box)
+
+    def clearInputPropertyWidgets(self) -> None:
+        """Destroy all of the active node input property widgets from the panel"""
+        assertRef(self.input_properties_box)
+        while(self.input_properties_box.layout().count()):
+            self.input_properties_box.layout().takeAt(0).widget().deleteLater()
+
+    def generateInputPropertyWidgets(self) -> None:
+        """Create property widgets for all of the active node inputs"""
+        if self.__active_node is None:
+            return
+
+        for prop in self.__active_node.getNodeInputs():
+            widget: FloatProperty = FloatProperty(prop.label, parent=self.input_properties_box)
+            self.input_properties_box.layout().addWidget(widget)
 
     def setActiveNode(self, node: Node) -> None:
         """Set active node bound to this property panel"""
@@ -91,10 +111,12 @@ class PropertyPanelWidget(QWidget):
         Log.debug(f"Setting property panel active node -> {node}")
         if self.__active_node is not None:
             self.__active_node.positionChanged.disconnect(self.onActiveNodeMoved)
+            self.clearInputPropertyWidgets()
 
         self.__active_node = node
         if self.__active_node is not None:
             self.__active_node.positionChanged.connect(self.onActiveNodeMoved)
+            self.generateInputPropertyWidgets()
 
     def getActiveNode(self) -> Optional[Node]:
         """Get active node bound to this property panel"""
