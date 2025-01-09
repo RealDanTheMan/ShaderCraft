@@ -62,6 +62,10 @@ class TextProperty(CommonWidget):
         assertType(text, str)
         self.text_widget.setText(text)
 
+    def setReadOnly(self, readonly: bool) -> None:
+        """Set value indicating if the inner text widget is editable"""
+        self.text_widget.setReadOnly(readonly)
+
 
 class FloatProperty(CommonWidget):
     """
@@ -107,3 +111,7 @@ class FloatProperty(CommonWidget):
         """Set float value of inner float widget"""
         assertType(value, float)
         self.float_widget.setValue(value)
+
+    def setReadOnly(self, readonly: bool) -> None:
+        """Set value indicating if the inner float widget is editable"""
+        self.float_widget.setReadOnly(readonly)
