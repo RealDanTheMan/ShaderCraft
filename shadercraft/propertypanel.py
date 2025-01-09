@@ -1,7 +1,7 @@
 from typing import Optional
 from uuid import UUID
 import logging as Log
-from PySide6.QtCore import QSize
+from PySide6.QtCore import QSize, Signal
 from PySide6.QtWidgets import (
     QSizePolicy,
     QWidget, 
@@ -11,11 +11,12 @@ from PySide6.QtWidgets import (
     QFrame,
     QLabel,
     QLineEdit,
-    QPushButton
+    QDoubleSpinBox
 )
 
 from .asserts import assertRef, assertTrue, assertType
 from .node import Node
+from .commonwidgets import TextProperty, FloatProperty
 
 class PropertyPanelWidget(QWidget):
     def __init__(self, parent: QWidget = None) -> None:
@@ -44,35 +45,26 @@ class PropertyPanelWidget(QWidget):
         self.general_box.setLayout(QVBoxLayout())
         self.general_box.layout().setContentsMargins(0, 0, 0, 10)
         self.general_box.layout().setSpacing(10)
-        self.type_property: PropertyWidget = PropertyWidget(
-            "Node Type",
-            str,
-            parent=self.general_box
-        )
 
-        self.name_property: PropertyWidget = PropertyWidget(
-            "Node Name",
-            str,
-            parent=self.general_box
-        )
+        self.type_property: TextProperty = TextProperty("Node Type", parent=self.general_box)
+        self.name_property: TextProperty = TextProperty("Node Name", parent=self.general_box)
+        self.uuid_property: TextProperty = TextProperty("Node UUID", parent=self.general_box)
 
-        self.uuid_property: PropertyWidget = PropertyWidget(
-            "Node UUID",
-            UUID,
-            parent=self.general_box
-        )
-
-        self.positionx_property: PropertyWidget = PropertyWidget(
+        self.positionx_property: FloatProperty = FloatProperty(
             "Position X",
-            float,
             parent=self.general_box
         )
 
-        self.positiony_property: PropertyWidget = PropertyWidget(
+        self.positiony_property: FloatProperty = FloatProperty(
             "Position Y",
-            float,
             parent=self.general_box
         )
+
+        self.name_property.setReadOnly(True)
+        self.type_property.setReadOnly(True)
+        self.uuid_property.setReadOnly(True)
+        self.positionx_property.value_changed.connect(self.onGeneralPropertyValueChanged)
+        self.positiony_property.value_changed.connect(self.onGeneralPropertyValueChanged)
 
         self.general_box.layout().addWidget(self.name_property)
         self.general_box.layout().addWidget(self.type_property)
@@ -106,45 +98,22 @@ class PropertyPanelWidget(QWidget):
             return
 
         Log.info("Fetching active node property panel values")
-        self.type_property.setValue(node.label)
-        self.name_property.setValue(node.name)
-        self.uuid_property.setValue(node.uuid)
+        self.type_property.setTextValue(node.label)
+        self.name_property.setTextValue(node.name)
+        self.uuid_property.setTextValue(str(node.uuid))
         self.positionx_property.setValue(node.posx)
         self.positiony_property.setValue(node.posy)
 
+    def onGeneralPropertyValueChanged(self, widget: QWidget, value: object) -> None:
+        if self.__active_node is None:
+            return
 
-class PropertyWidget(QWidget):
-    def __init__(self, label: str, property_type: type, parent: QWidget = None) -> None:
-        super().__init__(parent=parent)
-        self.property_label: str = label
-        self.property_type: type = property_type
-        self.property_value: object = None
+        print(f"Property panel property changed -> {widget} = {value}")
 
-        self.setObjectName("PropertyWidget")
-        self.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
+        if widget == self.positionx_property:
+            self.__active_node.setPosition(value, self.__active_node.posy)
+            return
 
-        self.setLayout(QVBoxLayout())
-        self.layout().setContentsMargins(2, 2, 2, 2)
-        self.layout().setSpacing(0)
-        self.frame_widget: QFrame = QFrame(parent=self)
-        self.frame_widget.setSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum)
-        self.frame_widget.setLayout(QVBoxLayout())
-        self.frame_widget.layout().setContentsMargins(0, 0, 0, 0)
-        self.frame_widget.layout().setSpacing(4)
-        self.label_widget: QLabel = QLabel(self.property_label, parent=self.frame_widget)
-        self.value_widget: QLineEdit = QLineEdit(parent=self.frame_widget)
-
-        self.layout().addWidget(self.frame_widget)
-        self.frame_widget.layout().addWidget(self.label_widget)
-        self.frame_widget.layout().addWidget(self.value_widget)
-
-    def getValue(self) -> object:
-        """Get property widget value"""
-        return None
-
-    def setValue(self, value: object) -> None:
-        """Set property widget value"""
-        assertRef(value)
-        assertType(value, self.property_type)
-        self.property_value = value
-        self.value_widget.setText(str(value))
+        if widget == self.positiony_property:
+            self.__active_node.setPosition(self.__active_node.posx, value)
+            return
