@@ -92,7 +92,7 @@ class FloatProperty(CommonWidget):
         self.frame_widget.layout().setSpacing(4)
         self.label_widget: QLabel = QLabel(self.property_label, parent=self.frame_widget)
         self.float_widget: QDoubleSpinBox = QDoubleSpinBox(parent=self.frame_widget)
-        self.float_widget.setRange(sys.float_info.min, sys.float_info.max)
+        self.float_widget.setRange(-sys.float_info.max, sys.float_info.max)
         self.float_widget.valueChanged.connect(self.onValueChanged)
 
         self.layout().addWidget(self.frame_widget)
