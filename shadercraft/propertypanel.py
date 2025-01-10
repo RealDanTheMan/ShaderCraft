@@ -61,9 +61,9 @@ class PropertyPanelWidget(QWidget):
             parent=self.general_box
         )
 
-        self.name_property.setReadOnly(True)
-        self.type_property.setReadOnly(True)
-        self.uuid_property.setReadOnly(True)
+        self.name_property.setDisabled(True)
+        self.type_property.setDisabled(True)
+        self.uuid_property.setDisabled(True)
         self.positionx_property.value_changed.connect(self.onGeneralPropertyValueChanged)
         self.positiony_property.value_changed.connect(self.onGeneralPropertyValueChanged)
 
@@ -101,6 +101,10 @@ class PropertyPanelWidget(QWidget):
 
         for prop in self.__active_node.getNodeInputs():
             widget: FloatProperty = FloatProperty(prop.label, parent=self.input_properties_box)
+            if self.__active_node.getConnectionFromInput(prop) is not None:
+                # When input propert is connected to another node we
+                # have to disable the property
+                widget.setDisabled(True)
             self.input_properties_box.layout().addWidget(widget)
 
     def setActiveNode(self, node: Node) -> None:
