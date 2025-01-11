@@ -8,7 +8,8 @@ from PySide6.QtWidgets import (
     QGraphicsView,
     QMainWindow,
     QVBoxLayout,
-    QTextEdit
+    QTextEdit,
+    QFrame
 )
 
 from .asserts import assertTrue, assertRef
@@ -19,6 +20,7 @@ from .nodegraphscene import NodeGraphScene
 from .nodegraphview import NodeGraphView
 from .nodepalette import NodePaletteWidget
 from .propertypanel import PropertyPanelWidget
+from .viewportwidget import ViewportWidget
 
 
 class AppWindow(QMainWindow):
@@ -27,6 +29,7 @@ class AppWindow(QMainWindow):
         self.log_last_pos: int = 0
         self.log_refresh_rate: int = 100
         self.log_timer: QTimer = QTimer(self)
+        self.preview_timer: QTimer = QTimer(self)
 
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
@@ -36,6 +39,7 @@ class AppWindow(QMainWindow):
         self._initScene()
         self._initPalette()
         self._initPropertyPanel()
+        self._initPreviewViewport()
         self.ui.actionGenerate_Shader_Code.triggered.connect(self.onGenerateShaderCode)
 
     def _initPalette(self) -> None:
@@ -96,6 +100,21 @@ class AppWindow(QMainWindow):
         self.property_panel: PropertyPanelWidget = PropertyPanelWidget(self)
         self.ui.PropertiesPanelFrame.setLayout(QVBoxLayout())
         self.ui.PropertiesPanelFrame.layout().addWidget(self.property_panel)
+
+    def _initPreviewViewport(self) -> None:
+        Log.info("Initialising preview viewport")
+        frame: QFrame = self.ui.PreviewViewportFrame
+        assertRef(frame)
+
+        self.preview_viewport: ViewportWidget = ViewportWidget(parent=frame)
+        self.preview_viewport.setMinimumHeight(128)
+        self.preview_viewport.setMinimumWidth(128)
+        frame.setLayout(QVBoxLayout())
+        frame.layout().addWidget(self.preview_viewport)
+
+        # Set viewport to redraw at 60Hz
+        self.preview_timer.timeout.connect(self.preview_viewport.requestRedraw)
+        self.preview_timer.start(16) 
 
     def updateLogView(self) -> None:
         """
