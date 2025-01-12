@@ -3,9 +3,6 @@ import os
 from datetime import datetime
 import logging as Log
 
-os.environ["QT_OPENGL"] = "desktop"
-os.environ["QT_QPA_PLATFORM"] = "xcb"
-
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QSurfaceFormat
 
@@ -30,6 +27,8 @@ def initLogger(level=Log.DEBUG, file: str = "app.log"):
 def main() -> int:
     """Main entry point to the application"""
     print('Starting Shadercraft')
+    os.environ["QT_OPENGL"] = "desktop"
+    os.environ["QT_QPA_PLATFORM"] = "xcb"
 
     # Configure application logging
     os.makedirs("logs", exist_ok=True)
