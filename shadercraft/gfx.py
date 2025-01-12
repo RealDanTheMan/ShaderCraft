@@ -60,7 +60,8 @@ class GFX:
             3 * renderable.vertices.itemsize,
             None
         )
-        GL.glEnableVertexArrayAttrib(renderable.vao, layout_position)
+
+        GL.glEnableVertexAttribArray(layout_position)
         GL.glBindVertexArray(0)
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
 

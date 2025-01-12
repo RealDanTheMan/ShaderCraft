@@ -6,28 +6,38 @@ from PySide6.QtGui import QOpenGLContext
 from PySide6.QtCore import QTimer
 
 from .asserts import assertRef, assertTrue
-import random
+from .gfx import GFX, GFXRenderable
 
 
 class ViewportWidget(QOpenGLWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
-        print(f"OpenGLWidget parent -> {self.parent()}")
+        self.fallback_shader = GFX.createFallbackShaderProgram()
+        self.preview_geo: GFXRenderable = GFX.createTriangleRenderable()
+        GFX.bindRenderableShader(self.preview_geo, self.fallback_shader)
 
     def initializeGL(self) -> None:
         """Initialise graphics context for this widget"""
         Log.info("Attempting to initialise OpenGL context")
+        Log.info(f"OpenGL Version: {GL.glGetString(GL.GL_VERSION).decode()}")
         self.context().makeCurrent(self.context().surface())
+        self.shader = GFX.createFallbackShaderProgram()
+        self.triangle = GFX.createTriangleRenderable()
+        GFX.bindRenderableShader(self.triangle, self.shader)
+ 
 
     def paintGL(self) -> None:
         """Redraw GL surface"""
         self.makeCurrent()
 
-        red: float = random.uniform(0.0, 1.0)
-        green: float = random.uniform(0.0, 1.0)
-        blue: float = random.uniform(0.0, 1.0)
-        GL.glClearColor(red, green, blue, 1.0)
+        GL.glClearColor(0.33, 0.33, 0.33, 1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
+
+        GL.glBindVertexArray(self.preview_geo.vao)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.preview_geo.vbo)
+        GL.glUseProgram(self.fallback_shader)
+        GL.glBindVertexArray(self.preview_geo.vao)
+        GL.glDrawArrays(GL.GL_TRIANGLES, 0, 3)
 
     def resizeGL(self, w: int, h: int) -> None:
         """
