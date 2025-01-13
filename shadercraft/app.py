@@ -27,8 +27,8 @@ def initLogger(level=Log.DEBUG, file: str = "app.log"):
 def main() -> int:
     """Main entry point to the application"""
     print('Starting Shadercraft')
-    os.environ["QT_OPENGL"] = "desktop"
-    os.environ["QT_QPA_PLATFORM"] = "xcb"
+    #os.environ["QT_OPENGL"] = "desktop"
+    #os.environ["QT_QPA_PLATFORM"] = "wayland"
 
     # Configure application logging
     os.makedirs("logs", exist_ok=True)
@@ -40,8 +40,13 @@ def main() -> int:
     # Ensure correct OpenGL surface support for any OpenGL widgets
     # We use OpenGL widgets for our material preview renderer
     surface_format: QSurfaceFormat = QSurfaceFormat()
-    surface_format.setVersion(4, 6)
-    surface_format.setProfile(QSurfaceFormat.CoreProfile)
+    surface_format.setVersion(3, 3)
+    surface_format.setSamples(4)
+    surface_format.setDepthBufferSize(24)
+    surface_format.setStencilBufferSize(8)
+    surface_format.setProfile(QSurfaceFormat.OpenGLContextProfile.CoreProfile)
+    surface_format.setRenderableType(QSurfaceFormat.OpenGL)
+    surface_format.setSwapBehavior(QSurfaceFormat.DoubleBuffer)
     QSurfaceFormat.setDefaultFormat(surface_format)
     print(QSurfaceFormat.defaultFormat())
 
@@ -55,4 +60,3 @@ def main() -> int:
     window.preview_viewport.update()
 
     sys.exit(app.exec())
-
