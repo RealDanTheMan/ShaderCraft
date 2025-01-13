@@ -12,19 +12,17 @@ from .gfx import GFX, GFXRenderable
 class ViewportWidget(QOpenGLWidget):
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent)
-        self.fallback_shader = GFX.createFallbackShaderProgram()
-        self.preview_geo: GFXRenderable = GFX.createTriangleRenderable()
-        GFX.bindRenderableShader(self.preview_geo, self.fallback_shader)
+        self.fallback_shader: GL.GLuint = None
+        self.preview_geo: GFXRenderable = None
 
     def initializeGL(self) -> None:
         """Initialise graphics context for this widget"""
         Log.info("Attempting to initialise OpenGL context")
         Log.info(f"OpenGL Version: {GL.glGetString(GL.GL_VERSION).decode()}")
         self.context().makeCurrent(self.context().surface())
-        self.shader = GFX.createFallbackShaderProgram()
-        self.triangle = GFX.createTriangleRenderable()
-        GFX.bindRenderableShader(self.triangle, self.shader)
- 
+        self.fallback_shader = GFX.createFallbackShaderProgram()
+        self.preview_geo = GFX.createTriangleRenderable()
+        GFX.bindRenderableShader(self.preview_geo, self.fallback_shader)
 
     def paintGL(self) -> None:
         """Redraw GL surface"""
