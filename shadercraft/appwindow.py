@@ -114,7 +114,7 @@ class AppWindow(QMainWindow):
 
         # Set viewport to redraw at 60Hz
         self.preview_timer.timeout.connect(self.preview_viewport.requestRedraw)
-        self.preview_timer.start(16) 
+        self.preview_timer.start(16)
 
     def updateLogView(self) -> None:
         """
