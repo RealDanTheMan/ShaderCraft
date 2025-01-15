@@ -10,12 +10,44 @@ class GFXRenderable:
     vbo: GL.GLuint
     vao: GL.GLuint
     vertices: list[float]
+    indices: list[int]
 
 
 class GFX:
     """
     Utility class for creating various data for OpenGL viewport widget.
     """
+
+    @staticmethod
+    def initRenderableBuffers(renderable: GFXRenderable) -> None:
+        """
+        Initialises OpenGL buffers of given renderable data.
+
+        Parameters:
+            renderable (GFXRenderable) : Renderable structure to initialise buffers from.
+
+        Returns:
+            None
+        """
+        vao: GL.GLuint = GL.glGenVertexArrays(1)
+        assertTrue(vao != 0)
+        GL.glBindVertexArray(vao)
+
+        vbo: GL.GLuint = GL.glGenBuffers(1)
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo)
+        GL.glBufferData(
+            GL.GL_ARRAY_BUFFER,
+            renderable.vertices.nbytes,
+            renderable.vertices,
+            GL.GL_STATIC_DRAW
+        )
+
+        # Unbind all buffers
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+        GL.glBindVertexArray(0)
+
+        renderable.vbo = vbo
+        renderable.vao = vao
 
     @staticmethod
     def createTriangleRenderable() -> GFXRenderable:
@@ -25,23 +57,76 @@ class GFX:
             0.0, 0.5, 0.0
         ], dtype=np.float32)
 
-        vao: GL.GLuint = GL.glGenVertexArrays(1)
-        assertTrue(vao != 0)
-        GL.glBindVertexArray(vao)
+        indices: np.array = np.array([
+            0,
+            1,
+            2
+        ], dtype=np.uint32)
 
-        vbo: GL.GLuint = GL.glGenBuffers(1)
-        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo)
-        GL.glBufferData(GL.GL_ARRAY_BUFFER, vertices.nbytes, vertices, GL.GL_STATIC_DRAW)
 
-        # Unbind all buffers
-        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
-        GL.glBindVertexArray(0)
-
-        return GFXRenderable(
-            vbo,
-            vao,
-            vertices
+        renderable: GFXRenderable = GFXRenderable(
+            0,
+            0,
+            vertices,
+            indices
         )
+
+        GFX.initRenderableBuffers(renderable)
+        return renderable
+
+    @staticmethod
+    def createSphereRenderable(radius: float, vsubdiv: int, hsubdiv: int) -> GFXRenderable:
+        """
+        Generate renderable geometry of a sphere.
+
+        Parameters:
+            radius (float): Sphere radius.
+            vsubdiv (int): Number of vertecal subdivisions.
+            hsubdiv (int): Number of horizontal subdivisions.
+
+        Returns:
+            Renderable (GFXRenderable): Renderable structure containing sphere geometry
+        """
+
+        # Generate sphere vertex positions
+        vertices: list[float] = []
+        for i in range(vsubdiv + 1):
+            vangle: float = np.pi / 2 - i * (np.pi / vsubdiv)
+            xy: float = np.cos(vangle)
+            z: float = np.sin(vangle)
+
+            for j in range(hsubdiv + 1):
+                hangle: float = j * (2 * np.pi / hsubdiv)
+                x: float = xy * np.cos(hangle)
+                y: float = xy * np.sin(hangle)
+                vertices.append([x, y, z])
+
+        # Generate sphere vertex indices
+        indices: list[int] = []
+        for i in range(vsubdiv):
+            for j in range(hsubdiv):
+                t0: int = i * (hsubdiv + 1) + j
+                t1: int = t0 + hsubdiv + 1
+
+                # First triangle of sphere quad at given subdivision
+                indices.append(t0)
+                indices.append(t1)
+                indices.append(t0 + 1)
+
+                # Second triangle of sphere quad at given subdivision
+                indices.append(t1)
+                indices.append(t1 + 1)
+                indices.append(t0 + 1)
+
+        renderable: GFXRenderable = GFXRenderable(
+            0,
+            0,
+            np.array(vertices, dtype=np.float32),
+            np.array(indices, dtype=np.uint32)
+        )
+
+        GFX.initRenderableBuffers(renderable)
+        return renderable
 
     @staticmethod
     def bindRenderableShader(renderable: GFXRenderable, shader: GL.GLuint) -> None:
