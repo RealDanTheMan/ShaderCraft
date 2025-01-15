@@ -21,21 +21,30 @@ class ViewportWidget(QOpenGLWidget):
         Log.info(f"OpenGL Version: {GL.glGetString(GL.GL_VERSION).decode()}")
         self.context().makeCurrent(self.context().surface())
         self.fallback_shader = GFX.createFallbackShaderProgram()
-        self.preview_geo = GFX.createTriangleRenderable()
+        self.preview_geo = GFX.createSphereRenderable(1, 64, 64)
         GFX.bindRenderableShader(self.preview_geo, self.fallback_shader)
 
     def paintGL(self) -> None:
         """Redraw GL surface"""
         self.makeCurrent()
 
+        # Clear render target
         GL.glClearColor(0.33, 0.33, 0.33, 1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT)
 
+        # Bind geometry buffers and shader
         GL.glBindVertexArray(self.preview_geo.vao)
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.preview_geo.vbo)
         GL.glUseProgram(self.fallback_shader)
         GL.glBindVertexArray(self.preview_geo.vao)
-        GL.glDrawArrays(GL.GL_TRIANGLES, 0, 3)
+
+        # Draw
+        GL.glDrawElements(
+            GL.GL_TRIANGLES,
+            len(self.preview_geo.indices),
+            GL.GL_UNSIGNED_INT,
+            self.preview_geo.indices
+        )
 
     def resizeGL(self, w: int, h: int) -> None:
         """
