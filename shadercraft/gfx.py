@@ -1,5 +1,7 @@
 from typing import Optional
 from dataclasses import dataclass
+import os
+import importlib.resources as res
 import numpy as np
 import OpenGL.GL as GL
 
@@ -259,39 +261,14 @@ class GFX:
         Creates minimalistic shader program which draws magenta solid color.
         """
 
-        vs_src: str = """
-        #version 330 core
-        layout (location = 0) in vec3 position;
-        layout (location = 1) in vec3 color;
-        layout (location = 2) in vec3 normal;
+        vs_src: str = res.files(r"shadercraft.resources.shaders").joinpath("fallback.vs")
+        ps_src: str = res.files(r"shadercraft.resources.shaders").joinpath("fallback.ps")
+        assertRef(vs_src)
+        assertRef(ps_src)
 
-        out vec3 pix_color;
-        out vec3 pix_normal;
-        
-        void main() 
-        {
-            gl_Position = vec4(position, 1.0);
-            pix_color = color;
-            pix_normal = normal;
-        }
-        """
-
-        ps_src: str = """
-        #version 330 core
-
-        in vec3 pix_color;
-        in vec3 pix_normal;
-
-        out vec4 frag_color;
-        void main() 
-        {
-            vec3 col = pix_color * pix_normal;
-            frag_color = vec4(col, 1.0);
-        }
-        """
-
-        vs: GL.GLuint = GFX.compileShaderSource(vs_src, GL.GL_VERTEX_SHADER)
-        ps: GL.GLuint = GFX.compileShaderSource(ps_src, GL.GL_FRAGMENT_SHADER)
+        vs: GL.GLuint = GFX.compileShaderSourcefile(str(vs_src), GL.GL_VERTEX_SHADER)
+        ps: GL.GLuint = GFX.compileShaderSourcefile(str(ps_src), GL.GL_FRAGMENT_SHADER,
+                                                    console_output=True)
         assertRef(vs, "Failed to compile fallback vertex shader")
         assertRef(ps, "Failed to compile fallback pixel shader")
 
@@ -321,6 +298,7 @@ class GFX:
         assertType(source, str)
         assertType(shader_type, GL.constant.IntConstant)
         assertTrue(shader_type == GL.GL_VERTEX_SHADER or shader_type == GL.GL_FRAGMENT_SHADER)
+        assertType(console_output, bool)
 
         shader: GL.GLuint = GL.glCreateShader(shader_type)
         assertTrue(shader != 0, "Failed to create fallback shader object")
@@ -335,4 +313,35 @@ class GFX:
 
         if GL.glGetShaderiv(shader, GL.GL_COMPILE_STATUS):
             return shader
+        return None
+
+    @staticmethod
+    def compileShaderSourcefile(
+            source_filepath: str,
+            shader_type,
+            log: str = None,
+            console_output: bool = False
+    ) -> Optional[GL.GLuint]:
+        """
+        Compiled given shader source file into shader object of given type.
+        
+        Paramters:
+            source_filepath (str) : Filepath to the shader source file.
+            shader_type : OpenGL shader type flag eg. GL.GL_VERTEX_SHADER.
+            log (str) : out string containing compile Log, use None for no log.
+            console_output (bool) : Pipe compile log to console output.
+
+        Returns:
+            (GL.GLuint) : OpenGL handle to compiled shader object, 0 if failed.
+        """
+
+        assertType(source_filepath, str)
+        assertTrue(os.path.exists(source_filepath))
+        assertType(shader_type, GL.constant.IntConstant)
+        assertType(console_output, bool)
+
+        with open(source_filepath, "r", encoding="utf-8") as file:
+            src: str = file.read()
+            return GFX.compileShaderSource(src, shader_type, log=log, console_output=console_output)
+
         return None
