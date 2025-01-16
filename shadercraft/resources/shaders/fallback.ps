@@ -1,0 +1,12 @@
+#version 330 core
+
+in vec3 pix_position;
+in vec3 pix_color;
+in vec3 pix_normal;
+
+out vec4 frag_color;
+
+void main() {
+	vec3 col = pix_color * pix_normal * pix_position;
+	frag_color = vec4(col, 1.0);
+}
