@@ -8,9 +8,12 @@ from .asserts import assertRef, assertTrue, assertType
 @dataclass
 class GFXRenderable:
     vbo: GL.GLuint
+    ebo: GL.GLuint
     vao: GL.GLuint
     vertices: list[float]
     indices: list[int]
+    colors: list[float]
+    normals: list[float]
 
 
 class GFX:
@@ -29,12 +32,26 @@ class GFX:
         Returns:
             None
         """
+
+        # Vertex Attribute Object
         vao: GL.GLuint = GL.glGenVertexArrays(1)
         assertTrue(vao != 0)
         GL.glBindVertexArray(vao)
 
-        vbo: GL.GLuint = GL.glGenBuffers(1)
-        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo)
+        # Vertex indices buffer data
+        ebo: GL.GLuint = GL.glGenBuffers(1)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, ebo)
+        GL.glBufferData(
+            GL.GL_ELEMENT_ARRAY_BUFFER,
+            len(renderable.indices),
+            renderable.indices,
+            GL.GL_STATIC_DRAW
+        )
+
+        vbo: GL.GLuint = GL.glGenBuffers(3)
+
+        # Vertex position buffer data
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[0])
         GL.glBufferData(
             GL.GL_ARRAY_BUFFER,
             renderable.vertices.nbytes,
@@ -42,12 +59,32 @@ class GFX:
             GL.GL_STATIC_DRAW
         )
 
+        # Vertex color buffer data
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[1])
+        GL.glBufferData(
+            GL.GL_ARRAY_BUFFER,
+            renderable.colors.nbytes,
+            renderable.colors,
+            GL.GL_STATIC_DRAW
+        )
+
+        # Vertex normal buffer data
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, vbo[2])
+        GL.glBufferData(
+            GL.GL_ARRAY_BUFFER,
+            renderable.normals.nbytes,
+            renderable.normals,
+            GL.GL_STATIC_DRAW
+        )
+
         # Unbind all buffers
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
+        GL.glBindBuffer(GL.GL_ELEMENT_ARRAY_BUFFER, 0)
         GL.glBindVertexArray(0)
 
         renderable.vbo = vbo
         renderable.vao = vao
+        renderable.ebo = ebo
 
     @staticmethod
     def createTriangleRenderable() -> GFXRenderable:
@@ -63,12 +100,27 @@ class GFX:
             2
         ], dtype=np.uint32)
 
+        colors: np.array = np.array([
+            1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0,
+            1.0, 1.0, 1.0
+        ], dtype=np.float32)
+
+        normals: np.array = np.array([
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0,
+            0.0, 0.0, 1.0
+        ], dtype=np.float32)
+
 
         renderable: GFXRenderable = GFXRenderable(
             0,
             0,
+            0,
             vertices,
-            indices
+            indices,
+            colors,
+            normals
         )
 
         GFX.initRenderableBuffers(renderable)
@@ -88,8 +140,10 @@ class GFX:
             Renderable (GFXRenderable): Renderable structure containing sphere geometry
         """
 
-        # Generate sphere vertex positions
+        # Generate sphere vertex positions and normal vector
         vertices: list[float] = []
+        normals: list[float] = []
+        colors: list[float] = []
         for i in range(vsubdiv + 1):
             vangle: float = np.pi / 2 - i * (np.pi / vsubdiv)
             xy: float = np.cos(vangle)
@@ -100,6 +154,10 @@ class GFX:
                 x: float = xy * np.cos(hangle)
                 y: float = xy * np.sin(hangle)
                 vertices.append([x, y, z])
+
+                mag: float = np.sqrt(x*x + y*y + z*z)
+                normals.append([x/mag, y/mag, z/mag])
+                colors.append([1.0, 1.0, 1.0])
 
         # Generate sphere vertex indices
         indices: list[int] = []
@@ -121,8 +179,11 @@ class GFX:
         renderable: GFXRenderable = GFXRenderable(
             0,
             0,
+            0,
             np.array(vertices, dtype=np.float32),
-            np.array(indices, dtype=np.uint32)
+            np.array(indices, dtype=np.uint32),
+            np.array(colors, dtype=np.float32),
+            np.array(normals, dtype=np.float32)
         )
 
         GFX.initRenderableBuffers(renderable)
@@ -130,13 +191,27 @@ class GFX:
 
     @staticmethod
     def bindRenderableShader(renderable: GFXRenderable, shader: GL.GLuint) -> None:
-        assertTrue(renderable.vbo != 0)
-        assertTrue(renderable.vao != 0)
+        """
+        Binds renderable buffer data to given shader vertex attributes.
+
+        Parameters:
+            renderable (GFXRenderable) : Renderable structure with buffer data.
+            shader (Gl.GLuint) : Compiled shader object handle.
+
+        Returns:
+            None
+        """
+        assertTrue(renderable.vbo is not None, "Invalid vertex buffer object")
+        assertTrue(renderable.vao != 0, "Invalid vertex attribute object")
+        assertTrue(renderable.ebo != 0, "Invalid element buffer object")
         assertRef(shader != 0)
 
         GL.glBindVertexArray(renderable.vao)
-        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, renderable.vbo)
+
+        # Vertex positon vertex attributes
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, renderable.vbo[0])
         layout_position: int = GL.glGetAttribLocation(shader, "position")
+        assertTrue(layout_position != -1, "Failed to resolve 'position' vertex layout ID")
         GL.glVertexAttribPointer(
             layout_position,
             3,
@@ -145,8 +220,36 @@ class GFX:
             3 * renderable.vertices.itemsize,
             None
         )
-
         GL.glEnableVertexAttribArray(layout_position)
+
+        # Vertex color vertex attributes
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, renderable.vbo[1])
+        layout_color: int = GL.glGetAttribLocation(shader, "color")
+        assertTrue(layout_color != -1, "Failed to resolve 'color' vertex layout ID")
+        GL.glVertexAttribPointer(
+            layout_color,
+            3,
+            GL.GL_FLOAT,
+            GL.GL_TRUE,
+            3 * renderable.colors.itemsize,
+            None
+        )
+        GL.glEnableVertexAttribArray(layout_color)
+
+        # Vertex normal vertex attributes
+        GL.glBindBuffer(GL.GL_ARRAY_BUFFER, renderable.vbo[2])
+        layout_normal: int = GL.glGetAttribLocation(shader, "normal")
+        assertTrue(layout_normal != -1, "Failed to resolve 'normal' vertex layout ID")
+        GL.glVertexAttribPointer(
+            layout_normal,
+            3,
+            GL.GL_FLOAT,
+            GL.GL_TRUE,
+            3 * renderable.normals.itemsize,
+            None
+        )
+        GL.glEnableVertexAttribArray(layout_normal)
+
         GL.glBindVertexArray(0)
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
 
@@ -159,20 +262,31 @@ class GFX:
         vs_src: str = """
         #version 330 core
         layout (location = 0) in vec3 position;
+        layout (location = 1) in vec3 color;
+        layout (location = 2) in vec3 normal;
+
+        out vec3 pix_color;
+        out vec3 pix_normal;
         
         void main() 
         {
             gl_Position = vec4(position, 1.0);
+            pix_color = color;
+            pix_normal = normal;
         }
         """
 
         ps_src: str = """
         #version 330 core
 
+        in vec3 pix_color;
+        in vec3 pix_normal;
+
         out vec4 frag_color;
         void main() 
         {
-            frag_color = vec4(1.0, 0.0, 1.0, 1.0);
+            vec3 col = pix_color * pix_normal;
+            frag_color = vec4(col, 1.0);
         }
         """
 
