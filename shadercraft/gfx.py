@@ -285,6 +285,41 @@ class GFX:
         return program
 
     @staticmethod
+    def createShaderFromFiles(vs: str, ps: str) -> Optional[GL.GLuint]:
+        """
+        Loads and compiles shader object from given shader files.
+
+        Parameters:
+            vs (str) : Filepath to vertex shader source file.
+            ps (str) : Filepath to pixel shader source file.
+
+        Returns:
+            GL.GLuint : OpenGL handle to compiler shader program, 0 if failed.
+        """
+
+        assertType(vs, str)
+        assertType(ps, str)
+        assertTrue(os.path.exists(vs))
+        assertTrue(os.path.exists(ps))
+
+        vertex: GL.GLuint = GFX.compileShaderSourcefile(str(vs), GL.GL_VERTEX_SHADER)
+        pixel: GL.GLuint = GFX.compileShaderSourcefile(str(ps), GL.GL_FRAGMENT_SHADER, console_output=True)
+        assertRef(vertex, "Failed to compile vertex shader")
+        assertRef(pixel, "Failed to compile pixel shader")
+
+        program: GL.GLuint = GL.glCreateProgram()
+        assertRef(program, "Failed to initialise OpenGL shader program")
+
+        GL.glAttachShader(program, vertex)
+        GL.glAttachShader(program, pixel)
+        GL.glLinkProgram(program)
+
+        GL.glDeleteShader(vertex)
+        GL.glDeleteShader(pixel)
+
+        return program
+
+    @staticmethod
     def compileShaderSource(
             source: str,
             shader_type,
