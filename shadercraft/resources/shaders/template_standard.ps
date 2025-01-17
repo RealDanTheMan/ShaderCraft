@@ -30,6 +30,6 @@ out vec4 frag_color;
 // Pixel shader entry point
 void main() {
 	GraphOutput values = interpretGraph();
-	vec3 col = pix_color * pix_normal * pix_position * values.albedo;
+	vec3 col = pix_color * values.albedo;
 	frag_color = vec4(col, 1.0);
 }
