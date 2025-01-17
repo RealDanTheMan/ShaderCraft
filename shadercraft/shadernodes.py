@@ -77,8 +77,8 @@ class OutputShaderNode(ShaderNodeBase):
         assertRef(alpha_value)
 
         src: str = f"""
-        float albedo = {albedo_value.value}
-        float alpha = {alpha_value.value}
+        float albedo = {albedo_value.value};
+        float alpha = {alpha_value.value};
         """
 
         return textwrap.dedent(src).strip()
