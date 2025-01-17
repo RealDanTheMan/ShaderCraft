@@ -227,30 +227,30 @@ class GFX:
         # Vertex color vertex attributes
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, renderable.vbo[1])
         layout_color: int = GL.glGetAttribLocation(shader, "color")
-        assertTrue(layout_color != -1, "Failed to resolve 'color' vertex layout ID")
-        GL.glVertexAttribPointer(
-            layout_color,
-            3,
-            GL.GL_FLOAT,
-            GL.GL_TRUE,
-            3 * renderable.colors.itemsize,
-            None
-        )
-        GL.glEnableVertexAttribArray(layout_color)
+        if layout_color != -1:
+            GL.glVertexAttribPointer(
+                layout_color,
+                3,
+                GL.GL_FLOAT,
+                GL.GL_TRUE,
+                3 * renderable.colors.itemsize,
+                None
+            )
+            GL.glEnableVertexAttribArray(layout_color)
 
         # Vertex normal vertex attributes
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, renderable.vbo[2])
         layout_normal: int = GL.glGetAttribLocation(shader, "normal")
-        assertTrue(layout_normal != -1, "Failed to resolve 'normal' vertex layout ID")
-        GL.glVertexAttribPointer(
-            layout_normal,
-            3,
-            GL.GL_FLOAT,
-            GL.GL_TRUE,
-            3 * renderable.normals.itemsize,
-            None
-        )
-        GL.glEnableVertexAttribArray(layout_normal)
+        if layout_normal != -1:
+            GL.glVertexAttribPointer(
+                layout_normal,
+                3,
+                GL.GL_FLOAT,
+                GL.GL_TRUE,
+                3 * renderable.normals.itemsize,
+                None
+            )
+            GL.glEnableVertexAttribArray(layout_normal)
 
         GL.glBindVertexArray(0)
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, 0)
