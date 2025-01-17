@@ -38,7 +38,7 @@ class ViewportWidget(QOpenGLWidget):
         # Bind geometry buffers and shader
         GL.glBindVertexArray(self.preview_geo.vao)
         GL.glBindBuffer(GL.GL_ARRAY_BUFFER, self.preview_geo.vbo[0])
-        GL.glUseProgram(self.fallback_shader)
+        GL.glUseProgram(self.active_shader)
         GL.glBindVertexArray(self.preview_geo.vao)
 
         # Draw
