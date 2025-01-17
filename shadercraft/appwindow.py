@@ -21,6 +21,7 @@ from .nodegraphview import NodeGraphView
 from .nodepalette import NodePaletteWidget
 from .propertypanel import PropertyPanelWidget
 from .viewportwidget import ViewportWidget
+from .shadergen import ShaderGen
 
 
 class AppWindow(QMainWindow):
@@ -152,7 +153,7 @@ class AppWindow(QMainWindow):
     def onGenerateShaderCode(self) -> None:
         """
         Event handler invoked when genrate shader code menu item is clicked.
-        For the time being we simply dump the shader code to the console.
+        Collects all the graph shader nodes and generates shader source code.
         """
         Log.info("Generating shader code")
         output_nodes: OutputShaderNode = self.graph_scene.getAllNodeOfClass(OutputShaderNode)
@@ -163,13 +164,15 @@ class AppWindow(QMainWindow):
         output_node: Node = output_nodes[0]
         shader_nodes: list[Node] = output_node.getDownstreamNodes()
 
-        for node in shader_nodes:
-            assertTrue(isinstance(node, ShaderNodeBase))
-            shader_summary: str = node.generateShaderCodeSummary()
-            shader_src: str = node.generateShaderCode()
-            print(shader_summary)
-            print(shader_src)
-            print("\r\n")
+        gen: ShaderGen = ShaderGen()
+        gen.generateSource(shader_nodes)
+        gen.writeSource(".")
+
+        # Load generate shade into preview viewport
+        assertRef(self.preview_viewport)
+        stat: bool = self.preview_viewport.requestShader(gen.vertex_shader, gen.pixel_shader)
+        if not stat:
+            Log.error("Failed to compile generated shader code")
 
         Log.info("Done")
 
