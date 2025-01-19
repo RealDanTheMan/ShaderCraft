@@ -213,9 +213,9 @@ class MulShaderNode(ShaderNodeBase):
 
     def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
         if node_input is self.input_a:
-            return NodeValue(str, f"{self._def_input_a}f")
+            return NodeValue(str, f"{self._def_input_a}")
         if node_input is self.input_b:
-            return NodeValue(str, f"{self._def_input_b}f")
+            return NodeValue(str, f"{self._def_input_b}")
 
         return NodeValue.noValue()
 
@@ -232,4 +232,76 @@ class MulShaderNode(ShaderNodeBase):
         float {self.name}_{self.float_output.name} = {self.input_a.name} * {self.input_b.name};
 
         """
+        return textwrap.dedent(src).strip()
+
+class MakeVec3Node(ShaderNodeBase):
+    """
+    MakeVec3 shader node creates any vec3 value from 3 given float inputs.
+    """
+
+    label = "MakeVec3"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = "MakeVec3Node"
+        self.label = "Vec3"
+
+        # Default input fallback values
+        self._def_x: float = 0.0
+        self._def_y: float = 0.0
+        self._def_z: float = 0.0
+
+        # Node Inputs
+        self.input_x: ShaderNodeIO = ShaderNodeIO("Vec3InputX", "X", ShaderValueHint.FLOAT)
+        self.input_y: ShaderNodeIO = ShaderNodeIO("Vec3InputX", "Y", ShaderValueHint.FLOAT)
+        self.input_z: ShaderNodeIO = ShaderNodeIO("Vec3InputX", "Z", ShaderValueHint.FLOAT)
+        self._registerInput(self.input_x)
+        self._registerInput(self.input_y)
+        self._registerInput(self.input_z)
+
+        # Node Outputs
+        self.output: ShaderNodeIO = ShaderNodeIO("Vec3Output", "Vec3", ShaderValueHint.FLOAT3)
+        self._registerOutput(self.output)
+
+    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
+        """
+        Generate default input value if no connections are form to given input property.
+        """
+
+        if node_input is self.input_x:
+            return NodeValue(str, f"{self._def_x}")
+        if node_input is self.input_y:
+            return NodeValue(str, f"{self._def_y}")
+        if node_input is self.input_z:
+            return NodeValue(str, f"{self._def_z}")
+
+        return NodeValue.noValue()
+
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
+        """
+        Generates vec3 output value shader reference.
+        """
+        if node_output is self.output:
+            return NodeValue(str, f"{self.name}_{self.output.name}")
+
+        return NodeValue.noValue()
+
+    def generateShaderCode(self) -> str:
+        """
+        Generate GLSL shader source code for this node.
+        """
+
+        x: NodeValue = self.getNodeInputValue(self.input_x.uuid)
+        y: NodeValue = self.getNodeInputValue(self.input_x.uuid)
+        z: NodeValue = self.getNodeInputValue(self.input_z.uuid)
+        assertRef(x)
+        assertRef(y)
+        assertRef(z)
+
+        output: NodeValue = self.getNodeOutputValue(self.output.uuid)
+        assertRef(output)
+        src: str = f"""
+                vec3 {output.value} = vec3({x.value}, {y.value}, {z.value});
+        """
+
         return textwrap.dedent(src).strip()
