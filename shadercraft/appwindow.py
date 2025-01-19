@@ -12,9 +12,16 @@ from PySide6.QtWidgets import (
     QFrame
 )
 
+from .shadernodes import (
+        OutputShaderNode,
+        ShaderNodeBase,
+        FloatShaderNode,
+        MulShaderNode,
+        MakeVec3Node
+)
+
 from .asserts import assertTrue, assertRef
 from .node import Node, NodeClassDesc
-from .shadernodes import OutputShaderNode, ShaderNodeBase, FloatShaderNode, MulShaderNode
 from .windowbase import Ui_MainWindow
 from .nodegraphscene import NodeGraphScene
 from .nodegraphview import NodeGraphView
@@ -55,6 +62,7 @@ class AppWindow(QMainWindow):
         self.palette_widget.addPaletteItems([
             FloatShaderNode,
             MulShaderNode,
+            MakeVec3Node,
             OutputShaderNode
         ])
 
