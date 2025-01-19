@@ -104,19 +104,25 @@ class OutputShaderNode(ShaderNodeBase):
         self.name = "OutputNode"
 
         # Default input values
-        self.def_albedo = 1.0
-        self.def_alpha = 1.0
+        self.def_albedo: list[float] = [1.0, 1.0, 1.0]
+        self.def_alpha: float = 1.0
 
         # Node input properties
         self.albedo_input = ShaderNodeIO("Albedo", "Albedo", ShaderValueHint.FLOAT3)
         self._registerInput(self.albedo_input)
 
-        self.alpha_input = ShaderNodeIO("Alpha", "Alpha", ShaderValueHint.FLOAT3)
+        self.alpha_input = ShaderNodeIO("Alpha", "Alpha", ShaderValueHint.FLOAT)
         self._registerInput(self.alpha_input)
 
     def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
+        """
+        Generate static default values for any input if not connected to any other ndoes.
+        """
         if node_input is self.albedo_input:
-            return NodeValue(str, f"{self.def_albedo}")
+            x: float = self.def_albedo[0]
+            y: float = self.def_albedo[1]
+            z: float = self.def_albedo[2]
+            return NodeValue(str, f"vec3({x}, {y}, {z})")
         if node_input is self.alpha_input:
             return NodeValue(str, f"{self.def_alpha}")
         return NodeValue.noValue()
@@ -129,7 +135,7 @@ class OutputShaderNode(ShaderNodeBase):
         assertRef(alpha_value)
 
         src: str = f"""
-        float albedo = {albedo_value.value};
+        vec3 albedo = {albedo_value.value};
         float alpha = {alpha_value.value};
         """
 
