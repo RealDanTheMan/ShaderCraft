@@ -70,7 +70,7 @@ class ShaderNodeBase(Node):
         """
         return textwrap.dedent(summary).strip()
 
-    def _CanConnect(self, uuid: UUID, src_node: Node, src_uuid: UUID) -> bool:
+    def canConnect(self, uuid: UUID, src_node: Node, src_uuid: UUID) -> bool:
         """
         Moderates connection requests to this shader node.
         For the time being we only accept connections of matchin shader value type:

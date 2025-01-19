@@ -227,7 +227,7 @@ class Node(QObject):
             Log.debug("Connection rejected, connection already exists for this input")
             return False
 
-        if not self._CanConnect(uuid, src, src_uuid):
+        if not self.canConnect(uuid, src, src_uuid):
             Log.debug("Connection has been rejected.")
             return False
 
@@ -246,7 +246,7 @@ class Node(QObject):
             self.__connections.remove(con)
             self.connectionRemoved.emit(con)
 
-    def _CanConnect(self, uuid: UUID, src_node: Node, src_uuid: UUID) -> bool:
+    def canConnect(self, uuid: UUID, src_node: Node, src_uuid: UUID) -> bool:
         """
         Method to be overriden in derived classes to moderate node connection requests.
         Base class accepts all connections.
