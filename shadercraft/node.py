@@ -39,23 +39,17 @@ class NodeIO:
     Inputs and outputs is how we can connection nodes and build logic.
     """
 
-    def __init__(self):
+    def __init__(self, name: str, label: str):
+        assertType(name, str)
+        assertType(label, str)
+
         self.uuid: UUID = uuid1()
-        self.name: str = None
-        self.label: str = None
+        self.name: str = name
+        self.label: str = label
 
     def getInfo(self) -> NodePropetyInfo:
         """Get minimal information representing this connection"""
         return NodePropetyInfo(self.uuid, self.label)
-
-    @staticmethod
-    def create(name: str, label: str) -> NodeIO:
-        """Shorthand function for creating node input/outputs"""
-        inout = NodeIO()
-        inout.uuid = uuid1()
-        inout.name = name
-        inout.label = label
-        return inout
 
 
 class NodeConnection():
@@ -232,6 +226,11 @@ class Node(QObject):
         if self.getConnection(uuid):
             Log.debug("Connection rejected, connection already exists for this input")
             return False
+
+        if not self._CanConnect(uuid, src, src_uuid):
+            Log.debug("Connection has been rejected.")
+            return False
+
         con = NodeConnection(src, src_uuid, self, uuid)
         self.__connections.append(con)
         self.connectionAdded.emit(con)
@@ -246,6 +245,21 @@ class Node(QObject):
             Log.debug(f"Removing node connection: {uuid}")
             self.__connections.remove(con)
             self.connectionRemoved.emit(con)
+
+    def _CanConnect(self, uuid: UUID, src_node: Node, src_uuid: UUID) -> bool:
+        """
+        Method to be overriden in derived classes to moderate node connection requests.
+        Base class accepts all connections.
+
+        Parameters:
+            uuid (UUID) : UUID of this node IO property connection is requested to.
+            src_node (Node) : Another node which requests connection.
+            src_uuid (UUID) : UUID of another node output property which requests connection. 
+
+        Returns: 
+            (bool) : True if connection is valid.
+        """
+        return True
 
     def getConnection(self, uuid: UUID) -> Optional[NodeConnection]:
         """Get connection on this node that matches given UUID"""

@@ -1,8 +1,40 @@
 from __future__ import annotations
+from enum import Enum
+from dataclasses import dataclass
+from uuid import UUID
 import textwrap
 
-from .asserts import assertRef
+from .asserts import assertRef, assertType
 from .node import Node, NodeValue, NodeIO
+
+
+class ShaderValueHint(Enum):
+    """
+    Enum class denoting valid shader value types.
+
+    """
+
+    FLOAT = 0
+    FLOAT2 = 1
+    FLOAT3 = 2
+    FLOAT4 = 4
+    MAT3 = 5
+    MAT4 = 6
+
+
+@dataclass
+class ShaderNodeIO(NodeIO):
+    """
+    Class representing shader node input/output properties.
+    IO properties can form connections between shader nodes to produce shader logic.
+
+    """
+
+    def __init__(self, name: str, label: str, encoded_type: ShaderValueHint) -> None:
+        super().__init__(name, label)
+
+        assertType(encoded_type, ShaderValueHint)
+        self.encoded_type: ShaderValueHint = encoded_type
 
 
 class ShaderNodeBase(Node):
@@ -38,6 +70,26 @@ class ShaderNodeBase(Node):
         """
         return textwrap.dedent(summary).strip()
 
+    def _CanConnect(self, uuid: UUID, src_node: Node, src_uuid: UUID) -> bool:
+        """
+        Moderates connection requests to this shader node.
+        For the time being we only accept connections of matchin shader value type:
+            Good: FLOAT <-> FLOAT
+            Good: FLOAT3 <-> FLOAT3
+            Bad: FLOAT3 <-> FLOAT
+        """
+        io0: ShaderNodeIO = self.getNodeInput(uuid)
+        io1: ShaderNodeIO = src_node.getNodeOutput(src_uuid)
+        assertRef(io0)
+        assertRef(io1)
+
+        # Only accept IO connections if they are of ShaderNodeIO type
+        if isinstance(io0, ShaderNodeIO) and isinstance(io1, ShaderNodeIO):
+            if io0.encoded_type == io1.encoded_type:
+                return True
+
+        return False
+
 
 class OutputShaderNode(ShaderNodeBase):
     """
@@ -56,10 +108,10 @@ class OutputShaderNode(ShaderNodeBase):
         self.def_alpha = 1.0
 
         # Node input properties
-        self.albedo_input = NodeIO.create("Albedo", "Albedo")
+        self.albedo_input = ShaderNodeIO("Albedo", "Albedo", ShaderValueHint.FLOAT3)
         self._registerInput(self.albedo_input)
 
-        self.alpha_input = NodeIO.create("Alpha", "Alpha")
+        self.alpha_input = ShaderNodeIO("Alpha", "Alpha", ShaderValueHint.FLOAT3)
         self._registerInput(self.alpha_input)
 
     def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
@@ -95,10 +147,10 @@ class FloatShaderNode(ShaderNodeBase):
         self.name = "ShaderFloadNode"
         self.default_input_val: float = 1.0
 
-        self.float_input = NodeIO.create("FloatInput", "In")
+        self.float_input = ShaderNodeIO("FloatInput", "In", ShaderValueHint.FLOAT)
         self._registerInput(self.float_input)
 
-        self.float_output = NodeIO.create("FloatOutput", "Out")
+        self.float_output = ShaderNodeIO("FloatOutput", "Out", ShaderValueHint.FLOAT)
         self._registerOutput(self.float_output)
 
     def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
@@ -139,13 +191,13 @@ class MulShaderNode(ShaderNodeBase):
         self._def_input_b = 1.0
 
         # Node inputs
-        self.input_a = NodeIO.create("MulInputA", "A")
+        self.input_a = ShaderNodeIO("MulInputA", "A", ShaderValueHint.FLOAT)
         self._registerInput(self.input_a)
-        self.input_b = NodeIO.create("MulInputB", "B")
+        self.input_b = ShaderNodeIO("MulInputB", "B", ShaderValueHint.FLOAT)
         self._registerInput(self.input_b)
 
         # Node output
-        self.float_output = NodeIO.create("MulOutput", "Value")
+        self.float_output = ShaderNodeIO("MulOutput", "Value", ShaderValueHint.FLOAT)
         self._registerOutput(self.float_output)
 
     def _generateOutput(self, node_output: NodeIO) -> NodeValue:
