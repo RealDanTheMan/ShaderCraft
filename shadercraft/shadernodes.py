@@ -153,9 +153,6 @@ class FloatShaderNode(ShaderNodeBase):
         self.name = "ShaderFloadNode"
         self.default_input_val: float = 1.0
 
-        self.float_input = ShaderNodeIO("FloatInput", "In", ShaderValueHint.FLOAT)
-        self._registerInput(self.float_input)
-
         self.float_output = ShaderNodeIO("FloatOutput", "Out", ShaderValueHint.FLOAT)
         self._registerOutput(self.float_output)
 
@@ -173,10 +170,7 @@ class FloatShaderNode(ShaderNodeBase):
 
     def generateShaderCode(self) -> str:
         """Generates float node shader code"""
-        input_val = self.getNodeInputValue(self.float_input.uuid)
-        assertRef(input_val)
-
-        src: str = f"float  {self.name}_{self.float_output.name} = {input_val.value}f;"
+        src: str = f"float  {self.name}_{self.float_output.name} = {self.default_input_val};"
         return src.strip()
 
 
@@ -292,7 +286,7 @@ class MakeVec3Node(ShaderNodeBase):
         """
 
         x: NodeValue = self.getNodeInputValue(self.input_x.uuid)
-        y: NodeValue = self.getNodeInputValue(self.input_x.uuid)
+        y: NodeValue = self.getNodeInputValue(self.input_y.uuid)
         z: NodeValue = self.getNodeInputValue(self.input_z.uuid)
         assertRef(x)
         assertRef(y)
