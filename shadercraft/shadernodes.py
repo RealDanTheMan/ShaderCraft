@@ -6,6 +6,7 @@ import textwrap
 
 from .asserts import assertRef, assertType
 from .node import Node, NodeValue, NodeIO
+from .vectors import Vec3F
 
 
 class ShaderValueHint(Enum):
@@ -109,11 +110,13 @@ class OutputShaderNode(ShaderNodeBase):
         super().__init__()
         self.name = "OutputNode"
 
-        # Default input values
-        self.def_albedo: list[float] = [1.0, 1.0, 1.0]
-
         # Node input properties
-        self.albedo_input = ShaderNodeIO("Albedo", "Albedo", ShaderValueHint.FLOAT3)
+        self.albedo_input = ShaderNodeIO(
+            "Albedo",
+            "Albedo",
+            ShaderValueHint.FLOAT3,
+            static_value = Vec3F(1.0, 1.0, 1.0)
+        )
         self._registerInput(self.albedo_input)
 
         self.alpha_input = ShaderNodeIO("Alpha", "Alpha", ShaderValueHint.FLOAT, 1.0)
@@ -124,9 +127,9 @@ class OutputShaderNode(ShaderNodeBase):
         Generate static default values for any input if not connected to any other ndoes.
         """
         if node_input is self.albedo_input:
-            x: float = self.def_albedo[0]
-            y: float = self.def_albedo[1]
-            z: float = self.def_albedo[2]
+            x: float = self.albedo_input.static_value.x
+            y: float = self.albedo_input.static_value.y
+            z: float = self.albedo_input.static_value.z
             return NodeValue(str, f"vec3({x}, {y}, {z})")
         if node_input is self.alpha_input:
             return NodeValue(str, f"{self.alpha_input.static_value}")
