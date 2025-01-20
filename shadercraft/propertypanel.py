@@ -20,6 +20,8 @@ from .shadernodes import ShaderNodeIO, ShaderValueHint
 from .commonwidgets import TextProperty, FloatProperty
 
 class PropertyPanelWidget(QWidget):
+    preview_redraw_requested: Signal = Signal()
+
     def __init__(self, parent: QWidget = None) -> None:
         super().__init__(parent=parent)
         self.__active_node: Optional[Node] = None
@@ -132,6 +134,7 @@ class PropertyPanelWidget(QWidget):
         assertRef(io)
         Log.debug(f"Shader property changed -> {io.label}={value}")
         io.static_value = value
+        self.preview_redraw_requested.emit()
 
     def setActiveNode(self, node: Node) -> None:
         """Set active node bound to this property panel"""

@@ -20,7 +20,7 @@ from .shadernodes import (
         MakeVec3Node
 )
 
-from .asserts import assertTrue, assertRef
+from .asserts import assertTrue, assertRef, assertType
 from .node import Node, NodeClassDesc
 from .windowbase import Ui_MainWindow
 from .nodegraphscene import NodeGraphScene
@@ -107,6 +107,7 @@ class AppWindow(QMainWindow):
 
     def _initPropertyPanel(self) -> None:
         self.property_panel: PropertyPanelWidget = PropertyPanelWidget(self)
+        self.property_panel.preview_redraw_requested.connect(self.onPreviewRedrawRequested)
         self.ui.PropertiesPanelFrame.setLayout(QVBoxLayout())
         self.ui.PropertiesPanelFrame.layout().addWidget(self.property_panel)
 
@@ -157,6 +158,19 @@ class AppWindow(QMainWindow):
 
         node: Node = node_desc.node_type()
         self.graph_scene.addNode(node)
+
+    def onPreviewRedrawRequested(self, rebuild_shader: bool = True) -> None:
+        """
+        Event handler invoked when various app panels action request redraw of preview viewport.
+        This can be slow if it triggers shader recompilation.
+        """
+        assertType(rebuild_shader, bool)
+        assertRef(self.preview_viewport)
+        Log.debug("Preview redraw requested")
+
+        if rebuild_shader:
+            self.onGenerateShaderCode()
+        self.preview_viewport.requestRedraw()
 
     def onGenerateShaderCode(self) -> None:
         """
