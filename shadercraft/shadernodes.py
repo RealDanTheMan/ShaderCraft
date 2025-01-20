@@ -30,11 +30,17 @@ class ShaderNodeIO(NodeIO):
 
     """
 
-    def __init__(self, name: str, label: str, encoded_type: ShaderValueHint) -> None:
+    def __init__(
+            self, name: str,
+            label: str,
+            encoded_type: ShaderValueHint,
+            static_value: object = None
+    ) -> None:
         super().__init__(name, label)
 
         assertType(encoded_type, ShaderValueHint)
         self.encoded_type: ShaderValueHint = encoded_type
+        self.static_value: object = static_value
 
 
 class ShaderNodeBase(Node):
@@ -105,13 +111,12 @@ class OutputShaderNode(ShaderNodeBase):
 
         # Default input values
         self.def_albedo: list[float] = [1.0, 1.0, 1.0]
-        self.def_alpha: float = 1.0
 
         # Node input properties
         self.albedo_input = ShaderNodeIO("Albedo", "Albedo", ShaderValueHint.FLOAT3)
         self._registerInput(self.albedo_input)
 
-        self.alpha_input = ShaderNodeIO("Alpha", "Alpha", ShaderValueHint.FLOAT)
+        self.alpha_input = ShaderNodeIO("Alpha", "Alpha", ShaderValueHint.FLOAT, 1.0)
         self._registerInput(self.alpha_input)
 
     def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
@@ -124,7 +129,7 @@ class OutputShaderNode(ShaderNodeBase):
             z: float = self.def_albedo[2]
             return NodeValue(str, f"vec3({x}, {y}, {z})")
         if node_input is self.alpha_input:
-            return NodeValue(str, f"{self.def_alpha}")
+            return NodeValue(str, f"{self.alpha_input.static_value}")
         return NodeValue.noValue()
 
     def generateShaderCode(self) -> str:
@@ -151,7 +156,14 @@ class FloatShaderNode(ShaderNodeBase):
     def __init__(self) -> None:
         super().__init__()
         self.name = "ShaderFloadNode"
-        self.default_input_val: float = 1.0
+
+        self.float_input: ShaderNodeIO = ShaderNodeIO(
+            "FloatInput",
+            "In",
+            ShaderValueHint.FLOAT,
+            static_value = 1.0
+        )
+        self._registerInput(self.float_input)
 
         self.float_output = ShaderNodeIO("FloatOutput", "Out", ShaderValueHint.FLOAT)
         self._registerOutput(self.float_output)
@@ -159,7 +171,7 @@ class FloatShaderNode(ShaderNodeBase):
     def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
         """Generate default input value for non connected inputs"""
         if node_input is self.float_input:
-            return NodeValue(str, f"{self.default_input_val}")
+            return NodeValue(str, f"{self.float_input.static_value}")
         return NodeValue.noValue()
 
     def _generateOutput(self, node_output: NodeIO) -> NodeValue:
@@ -170,7 +182,10 @@ class FloatShaderNode(ShaderNodeBase):
 
     def generateShaderCode(self) -> str:
         """Generates float node shader code"""
-        src: str = f"float  {self.name}_{self.float_output.name} = {self.default_input_val};"
+        val: NodeValue = self.getNodeInputValue(self.float_input.uuid)
+        assertRef(val)
+
+        src: str = f"float  {self.name}_{self.float_output.name} = {val.value};"
         return src.strip()
 
 
@@ -186,14 +201,10 @@ class MulShaderNode(ShaderNodeBase):
         self.name = "MulNode"
         self.label = "Mul"
 
-        # Default input values
-        self._def_input_a = 1.0
-        self._def_input_b = 1.0
-
         # Node inputs
-        self.input_a = ShaderNodeIO("MulInputA", "A", ShaderValueHint.FLOAT)
+        self.input_a = ShaderNodeIO("MulInputA", "A", ShaderValueHint.FLOAT, 1.0)
         self._registerInput(self.input_a)
-        self.input_b = ShaderNodeIO("MulInputB", "B", ShaderValueHint.FLOAT)
+        self.input_b = ShaderNodeIO("MulInputB", "B", ShaderValueHint.FLOAT, 1.0)
         self._registerInput(self.input_b)
 
         # Node output
@@ -207,9 +218,9 @@ class MulShaderNode(ShaderNodeBase):
 
     def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
         if node_input is self.input_a:
-            return NodeValue(str, f"{self._def_input_a}")
+            return NodeValue(str, f"{self.input_a.static_value}")
         if node_input is self.input_b:
-            return NodeValue(str, f"{self._def_input_b}")
+            return NodeValue(str, f"{self.input_b.static_value}")
 
         return NodeValue.noValue()
 
@@ -240,15 +251,10 @@ class MakeVec3Node(ShaderNodeBase):
         self.name = "MakeVec3Node"
         self.label = "Vec3"
 
-        # Default input fallback values
-        self._def_x: float = 0.0
-        self._def_y: float = 0.0
-        self._def_z: float = 0.0
-
         # Node Inputs
-        self.input_x: ShaderNodeIO = ShaderNodeIO("Vec3InputX", "X", ShaderValueHint.FLOAT)
-        self.input_y: ShaderNodeIO = ShaderNodeIO("Vec3InputX", "Y", ShaderValueHint.FLOAT)
-        self.input_z: ShaderNodeIO = ShaderNodeIO("Vec3InputX", "Z", ShaderValueHint.FLOAT)
+        self.input_x: ShaderNodeIO = ShaderNodeIO("Vec3InputX", "X", ShaderValueHint.FLOAT, 0.0)
+        self.input_y: ShaderNodeIO = ShaderNodeIO("Vec3InputX", "Y", ShaderValueHint.FLOAT, 0.0)
+        self.input_z: ShaderNodeIO = ShaderNodeIO("Vec3InputX", "Z", ShaderValueHint.FLOAT, 0.0)
         self._registerInput(self.input_x)
         self._registerInput(self.input_y)
         self._registerInput(self.input_z)
@@ -263,11 +269,11 @@ class MakeVec3Node(ShaderNodeBase):
         """
 
         if node_input is self.input_x:
-            return NodeValue(str, f"{self._def_x}")
+            return NodeValue(str, f"{self.input_x.static_value}")
         if node_input is self.input_y:
-            return NodeValue(str, f"{self._def_y}")
+            return NodeValue(str, f"{self.input_y.static_value}")
         if node_input is self.input_z:
-            return NodeValue(str, f"{self._def_z}")
+            return NodeValue(str, f"{self.input_z.static_value}")
 
         return NodeValue.noValue()
 
