@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
 
 from .asserts import assertRef, assertTrue, assertType
 from .node import Node
+from .shadernodes import ShaderNodeIO, ShaderValueHint
 from .commonwidgets import TextProperty, FloatProperty
 
 class PropertyPanelWidget(QWidget):
@@ -100,12 +101,37 @@ class PropertyPanelWidget(QWidget):
             return
 
         for prop in self.__active_node.getNodeInputs():
-            widget: FloatProperty = FloatProperty(prop.label, parent=self.input_properties_box)
-            if self.__active_node.getConnectionFromInput(prop) is not None:
-                # When input propert is connected to another node we
-                # have to disable the property
-                widget.setDisabled(True)
-            self.input_properties_box.layout().addWidget(widget)
+            if not isinstance(prop, ShaderNodeIO):
+                # For the time being we only service shader node properties
+                pass
+
+            widget: QWidget = None
+            if prop.encoded_type == ShaderValueHint.FLOAT:
+                widget: FloatProperty = FloatProperty(prop.label, parent=self.input_properties_box)
+                widget.setValue(prop.static_value)
+                if self.__active_node.getConnectionFromInput(prop) is not None:
+                    # When input propert is connected to another node we
+                    # have to disable the property
+                    widget.setDisabled(True)
+                widget.setProperty("PropertyUUID", prop.uuid)
+                widget.value_changed.connect(self.onShaderPropertyValueChange)
+                self.input_properties_box.layout().addWidget(widget)
+
+    def onShaderPropertyValueChange(self, widget: QWidget, value: float) -> None:
+        """
+        Event handler invoked when one of the shader property widget changes value.
+        """
+        active_node: Node = self.getActiveNode()
+        if active_node is None:
+            return
+
+        property_uuid: UUID = widget.property("PropertyUUID")
+        assertType(property_uuid, UUID)
+
+        io: ShaderNodeIO = active_node.getNodeInput(property_uuid)
+        assertRef(io)
+        Log.debug(f"Shader property changed -> {io.label}={value}")
+        io.static_value = value
 
     def setActiveNode(self, node: Node) -> None:
         """Set active node bound to this property panel"""
