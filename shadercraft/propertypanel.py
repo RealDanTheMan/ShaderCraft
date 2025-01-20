@@ -17,7 +17,7 @@ from PySide6.QtWidgets import (
 from .asserts import assertRef, assertTrue, assertType
 from .node import Node
 from .shadernodes import ShaderNodeIO, ShaderValueHint
-from .commonwidgets import TextProperty, FloatProperty
+from .commonwidgets import CommonWidget, TextProperty, FloatProperty, Float3Property
 
 class PropertyPanelWidget(QWidget):
     preview_redraw_requested: Signal = Signal()
@@ -107,10 +107,15 @@ class PropertyPanelWidget(QWidget):
                 # For the time being we only service shader node properties
                 pass
 
-            widget: QWidget = None
+            widget: CommonWidget = None
             if prop.encoded_type == ShaderValueHint.FLOAT:
                 widget: FloatProperty = FloatProperty(prop.label, parent=self.input_properties_box)
                 widget.setValue(prop.static_value)
+            elif prop.encoded_type == ShaderValueHint.FLOAT3:
+                widget: Float3Property = Float3Property(prop.label, parent=self.input_properties_box)
+                widget.setValue(prop.static_value)
+
+            if widget is not None:
                 if self.__active_node.getConnectionFromInput(prop) is not None:
                     # When input propert is connected to another node we
                     # have to disable the property
