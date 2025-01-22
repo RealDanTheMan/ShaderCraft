@@ -1,4 +1,5 @@
 import os
+import ctypes
 import logging as Log
 import OpenGL.GL as GL
 from PySide6.QtWidgets import QWidget
@@ -26,6 +27,13 @@ class ViewportWidget(QOpenGLWidget):
         self.active_shader = self.fallback_shader
         self.preview_geo = GFX.createSphereRenderable(1, 64, 64)
         GFX.bindRenderableShader(self.preview_geo, self.active_shader)
+
+        # Enable OpenGL debug logging
+        # TODO: We should drive this using app settings
+        Log.info("Enabling OpenGL debug logging")
+        GL.glEnable(GL.GL_DEBUG_OUTPUT)
+        GL.glEnable(GL.GL_DEBUG_OUTPUT_SYNCHRONOUS)
+        #GL.glDebugMessageCallback(GL.GLDEBUGPROC(self.graphicsMessageCallback), None)
 
     def paintGL(self) -> None:
         """Redraw GL surface"""
@@ -89,3 +97,33 @@ class ViewportWidget(QOpenGLWidget):
 
         GFX.bindRenderableShader(self.preview_geo, self.active_shader)
         return True
+
+    @staticmethod
+    def graphicsMessageCallback(
+            src,
+            msg_type,
+            msg_id,
+            severity,
+            msg_len,
+            msg,
+            user_param
+    ) -> None:
+        """
+        Event handler invoked when OpenGL generates debug output message.
+        Debug logging has to be enabled first.
+        """
+        Log.debug("Received graphics log message!")
+
+        message: str = ctypes.cast(msg, ctypes.POINTER(ctypes.c_char)).value.decode("utf-8")
+        print(message)
+
+        log_msg: str = f"""
+        OpenGL Debug Message:
+            Source {src}
+            Type: {msg_type}
+            ID: {msg_id}
+            Severity: {severity}
+            Message: {message}
+        """
+
+        Log.debug(log_msg)
