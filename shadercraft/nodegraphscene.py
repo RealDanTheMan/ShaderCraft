@@ -2,12 +2,7 @@ from __future__ import annotations
 from typing import Optional
 from uuid import UUID, uuid1
 import logging as Log
-import PySide6
-from .node import Node, NodeConnection, NodeIO
-from .node_widget import NodeProxyWidget, NodePinShapeWidget
-from .connection_widget import ConnectionWidget
-from .shadernodes import FloatShaderNode, MulShaderNode, OutputShaderNode
-from .asserts import assertRef, assertFalse, assertTrue
+
 from PySide6.QtWidgets import (
     QGraphicsScene,
     QWidget,
@@ -18,13 +13,20 @@ from PySide6.QtWidgets import (
 from PySide6.QtGui import QMouseEvent
 from PySide6.QtCore import Signal, Slot, QObject, QPoint, Qt, QPointF
 
+from .node import Node, NodeConnection, NodeIO
+from .node_widget import NodeProxyWidget, NodePinShapeWidget
+from .connection_widget import ConnectionWidget
+from .shadernodes import FloatShaderNode, MulShaderNode, OutputShaderNode
+from .asserts import assertRef, assertFalse, assertTrue
+
 
 class NodeGraphScene(QGraphicsScene):
     """
     Class that represents node graph scene.
     All the nodes and their connections are stored in the scene
     """
-    selected_node_changed: QSignal = Signal(Node)
+    selected_node_changed: Signal = Signal(Node)
+    preview_redraw_requested: Signal = Signal()
 
     def __init__(self):
         """Default constructor"""
@@ -352,8 +354,11 @@ class NodeGraphScene(QGraphicsScene):
             target_node.removeConnection(excon.uuid)
 
         # Create new connection
-        target_node.addConnection(node_in.uuid, source_node, node_out.uuid)
-        return True
+        success: bool = target_node.addConnection(node_in.uuid, source_node, node_out.uuid)
+        if success:
+            self.preview_redraw_requested.emit()
+
+        return success
 
     def onNodeConnectionAdded(self, connection: NodeConnection) -> None:
         """Event handler invoked when new connection between two nodes happens in the graph"""
@@ -365,7 +370,9 @@ class NodeGraphScene(QGraphicsScene):
         """Event handler invoked when existing connection between nodes is severed"""
         assertRef(connection)
         assertRef(connection.getWidget())
+
         self.removeItem(connection.getWidget())
+        self.preview_redraw_requested.emit()
 
     def onNodeSelectionChanged(self, node: QObject, selected: bool) -> None:
         """Event handler invoked when selection state changes on any of the nodes"""

@@ -16,6 +16,12 @@ class AppWindowTest(unittest.TestCase):
         self.app.quit()
         del self.app
 
+    @staticmethod
+    def freeLogs() -> None:
+        for handler in Log.getLogger().handlers:
+            handler.close()
+            Log.getLogger().removeHandler(handler)
+
     def testWindowInit(self) -> None:
         """
         Test that all the main widnow along with the core widget initialised correctly.
@@ -33,25 +39,53 @@ class AppWindowTest(unittest.TestCase):
 
         win.close()
         del win
+        self.freeLogs()
 
     def testWindowLogging(self) -> None:
         """
         Tests window ability to log information to file on disk.
         """
-        log_path: str = "test_logs"
-        log_file: str = "test_logs/appwindow.log"
+
+        # Ensure logger is setup
+        log_path: str = "logs/test/"
+        log_file: str = "logs/test/test-appwindow.log"
         os.makedirs(log_path, exist_ok=True)
-        initLogger(log_file)
+        initLogger(file=log_file)
+        assert os.path.exists(log_file), "Log file not present on the disk"
+
+        # Ensure window is setup
         win: AppWindow = AppWindow()
         win.show()
 
-        Log.info("logging test information")
-        Log.info("Logging more test information")
-        time.sleep(win.log_refresh_rate * 0.001 + 1)
+        # Check initial log fle state is valid
+        assert win.getLogFile() is not None, "Log file bound to app window is None"
+        assert win.getLogFile() != "/dev/null", "Log file bound to app window is dev/null"
+        assert os.path.exists(win.getLogFile()), "Log file bound to app window is not on disk"
 
-        assert win.getLogFile() is not None
+        # Log some test messages.
+        Log.info(f"Test log initialised -> {log_file}")
+        Log.debug("logging test debug message")
+        Log.info("Logging test info message")
+        Log.warning("Logging test warning message")
+        Log.error("Logging test error message")
+
+        # Flush all messages to disk
+        time.sleep(1)
+        for handler in Log.getLogger().handlers:
+            print(f"Flushing log handler  ->  {handler}")
+            handler.flush()
+
+        # Logging view polls log file over portion oftime so we log some test info
+        # and let some time pass before we sample state.
+        self.app.processEvents()
+        time.sleep(win.log_refresh_rate * 0.001)
+        self.app.processEvents()
+        time.sleep(win.log_refresh_rate * 0.001)
+        self.app.processEvents()
+
         assert win.log_last_pos > 0, "Logging position is invalid"
         assert win.log_refresh_rate > 0, "Logging refresh rate is 0"
 
+        # Test cleanup.
         win.close()
         del win
