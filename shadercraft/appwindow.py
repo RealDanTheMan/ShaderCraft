@@ -88,6 +88,7 @@ class AppWindow(QMainWindow):
         assertRef(self.graph_view)
         self.graph_scene: NodeGraphScene = NodeGraphScene()
         self.graph_scene.selected_node_changed.connect(self.onGraphNodeSelectionChanged)
+        self.graph_scene.preview_redraw_requested.connect(self.onPreviewRedrawRequested)
         self.graph_view.setScene(self.graph_scene)
         self.graph_view.update()
         self.graph_scene.addDefaultNodes()
