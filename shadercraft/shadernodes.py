@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from uuid import UUID
 import textwrap
 
-from .asserts import assertRef, assertType
+from .asserts import assertRef, assertType, assertTrue
 from .node import Node, NodeValue, NodeIO
 from .vectors import Vec3F
 
@@ -97,6 +97,24 @@ class ShaderNodeBase(Node):
 
         return False
 
+    def _generateInputValue(self, node_input: ShaderNodeIO) -> NodeValue:
+        """
+        Generate default static value for input property that is not connected to
+        any other nodes.
+        """
+        assertType(node_input, ShaderNodeIO)
+
+        # For the time being we only accept Float or Vec3F value types.
+        value: object = node_input.static_value
+        assertTrue(type(value) in (float, Vec3F))
+
+        if type(value) == float:
+            return NodeValue(str, f"{value}")
+        elif type(value) == Vec3F:
+            return NodeValue(str, f"vec3({value.x}, {value.y}, {value.z})")
+        return NodeValue.noValue()
+
+
 
 class OutputShaderNode(ShaderNodeBase):
     """
@@ -121,19 +139,6 @@ class OutputShaderNode(ShaderNodeBase):
 
         self.alpha_input = ShaderNodeIO("Alpha", "Alpha", ShaderValueHint.FLOAT, 1.0)
         self._registerInput(self.alpha_input)
-
-    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
-        """
-        Generate static default values for any input if not connected to any other ndoes.
-        """
-        if node_input is self.albedo_input:
-            x: float = self.albedo_input.static_value.x
-            y: float = self.albedo_input.static_value.y
-            z: float = self.albedo_input.static_value.z
-            return NodeValue(str, f"vec3({x}, {y}, {z})")
-        if node_input is self.alpha_input:
-            return NodeValue(str, f"{self.alpha_input.static_value}")
-        return NodeValue.noValue()
 
     def generateShaderCode(self) -> str:
         """Generate shader code for this node"""
@@ -170,12 +175,6 @@ class FloatShaderNode(ShaderNodeBase):
 
         self.float_output = ShaderNodeIO("FloatOutput", "Out", ShaderValueHint.FLOAT)
         self._registerOutput(self.float_output)
-
-    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
-        """Generate default input value for non connected inputs"""
-        if node_input is self.float_input:
-            return NodeValue(str, f"{self.float_input.static_value}")
-        return NodeValue.noValue()
 
     def _generateOutput(self, node_output: NodeIO) -> NodeValue:
         """Generate value for given node output property"""
@@ -219,14 +218,6 @@ class MulShaderNode(ShaderNodeBase):
             return NodeValue(str, f"{self.name}_{self.float_output.name}")
         return NodeValue.noValue()
 
-    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
-        if node_input is self.input_a:
-            return NodeValue(str, f"{self.input_a.static_value}")
-        if node_input is self.input_b:
-            return NodeValue(str, f"{self.input_b.static_value}")
-
-        return NodeValue.noValue()
-
     def generateShaderCode(self) -> str:
         val_a = self.getNodeInputValue(self.input_a.uuid)
         val_b = self.getNodeInputValue(self.input_b.uuid)
@@ -265,20 +256,6 @@ class MakeVec3Node(ShaderNodeBase):
         # Node Outputs
         self.output: ShaderNodeIO = ShaderNodeIO("Vec3Output", "Vec3", ShaderValueHint.FLOAT3)
         self._registerOutput(self.output)
-
-    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
-        """
-        Generate default input value if no connections are form to given input property.
-        """
-
-        if node_input is self.input_x:
-            return NodeValue(str, f"{self.input_x.static_value}")
-        if node_input is self.input_y:
-            return NodeValue(str, f"{self.input_y.static_value}")
-        if node_input is self.input_z:
-            return NodeValue(str, f"{self.input_z.static_value}")
-
-        return NodeValue.noValue()
 
     def _generateOutput(self, node_output: NodeIO) -> NodeValue:
         """
@@ -332,20 +309,6 @@ class LerpNode(ShaderNodeBase):
         # Node outputs
         self.output: ShaderNodeIO = ShaderNodeIO("LerpOutput", "Out", ShaderValueHint.FLOAT)
         self._registerOutput(self.output)
-
-    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
-        """
-        Generate default input value if no connections are form to given input property.
-        """
-
-        if node_input is self.input_a:
-            return NodeValue(str, f"{self.input_a.static_value}")
-        if node_input is self.input_b:
-            return NodeValue(str, f"{self.input_b.static_value}")
-        if node_input is self.input_t:
-            return NodeValue(str, f"{self.input_t.static_value}")
-
-        return NodeValue.noValue()
 
     def _generateOutput(self, node_output: NodeIO) -> NodeValue:
         """
