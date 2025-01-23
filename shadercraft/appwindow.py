@@ -17,7 +17,8 @@ from .shadernodes import (
         ShaderNodeBase,
         FloatShaderNode,
         MulShaderNode,
-        MakeVec3Node
+        MakeVec3Node,
+        LerpNode
 )
 
 from .asserts import assertTrue, assertRef, assertType
@@ -63,6 +64,7 @@ class AppWindow(QMainWindow):
             FloatShaderNode,
             MulShaderNode,
             MakeVec3Node,
+            LerpNode,
             OutputShaderNode
         ])
 
