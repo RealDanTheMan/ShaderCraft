@@ -108,10 +108,12 @@ class ShaderNodeBase(Node):
         value: object = node_input.static_value
         assertTrue(type(value) in (float, Vec3F))
 
-        if type(value) == float:
+        if isinstance(value, float):
             return NodeValue(str, f"{value}")
-        elif type(value) == Vec3F:
+
+        if isinstance(value, Vec3F):
             return NodeValue(str, f"vec3({value.x}, {value.y}, {value.z})")
+
         return NodeValue.noValue()
 
 
