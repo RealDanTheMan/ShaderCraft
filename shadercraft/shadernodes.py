@@ -308,3 +308,70 @@ class MakeVec3Node(ShaderNodeBase):
         """
 
         return textwrap.dedent(src).strip()
+
+class LerpNode(ShaderNodeBase):
+    """
+    Lerp shader node mixes two values using T as interpolator.
+    """
+
+    label = "Lerp"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = "LerpNode"
+        self.label = "Lerp"
+
+        # Node inputs
+        self.input_a: ShaderNodeIO = ShaderNodeIO("LerpInputA", "a", ShaderValueHint.FLOAT, 0.0)
+        self.input_b: ShaderNodeIO = ShaderNodeIO("LerpInputB", "b", ShaderValueHint.FLOAT, 1.0)
+        self.input_t: ShaderNodeIO = ShaderNodeIO("LerpInputT", "t", ShaderValueHint.FLOAT, 0.5)
+        self._registerInput(self.input_a)
+        self._registerInput(self.input_b)
+        self._registerInput(self.input_t)
+
+        # Node outputs
+        self.output: ShaderNodeIO = ShaderNodeIO("LerpOutput", "Out", ShaderValueHint.FLOAT)
+        self._registerOutput(self.output)
+
+    def _generateInputValue(self, node_input: NodeIO) -> NodeValue:
+        """
+        Generate default input value if no connections are form to given input property.
+        """
+
+        if node_input is self.input_a:
+            return NodeValue(str, f"{self.input_a.static_value}")
+        if node_input is self.input_b:
+            return NodeValue(str, f"{self.input_b.static_value}")
+        if node_input is self.input_t:
+            return NodeValue(str, f"{self.input_t.static_value}")
+
+        return NodeValue.noValue()
+
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
+        """
+        Generates vec3 output value shader reference.
+        """
+        if node_output is self.output:
+            return NodeValue(str, f"{self.name}_{self.output.name}")
+
+        return NodeValue.noValue()
+
+    def generateShaderCode(self) -> str:
+        """
+        Generate GLSL shader source code for this node.
+        """
+
+        a: NodeValue = self.getNodeInputValue(self.input_a.uuid)
+        b: NodeValue = self.getNodeInputValue(self.input_b.uuid)
+        t: NodeValue = self.getNodeInputValue(self.input_t.uuid)
+        assertRef(a)
+        assertRef(b)
+        assertRef(t)
+
+        output: NodeValue = self.getNodeOutputValue(self.output.uuid)
+        assertRef(output)
+        src: str = f"""
+                float {output.value} = mix({a.value}, {b.value}, {t.value});
+        """
+
+        return textwrap.dedent(src).strip()
