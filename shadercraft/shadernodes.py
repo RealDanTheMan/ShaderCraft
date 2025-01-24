@@ -404,3 +404,57 @@ class LerpVecNode(ShaderNodeBase):
         """
 
         return textwrap.dedent(src).strip()
+
+
+class VertexColorShaderNode(ShaderNodeBase):
+    """
+    Shader node class that gets vertex color values.
+    """
+    label = "Vertex Color"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = "VertexColorNode"
+
+
+        self.output = ShaderNodeIO("VertexColorOutput", "Vertex Color", ShaderValueHint.FLOAT3)
+        self._registerOutput(self.output)
+
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
+        """Generate value for given node output property"""
+        if node_output is self.output:
+            return NodeValue(str, f"{self.name}_{self.output.name}")
+        return NodeValue.noValue()
+
+    def generateShaderCode(self) -> str:
+        """Generates float node shader code"""
+
+        src: str = f"vec3  {self.name}_{self.output.name} = pix_color;"
+        return src.strip()
+
+
+class VertexNormalShaderNode(ShaderNodeBase):
+    """
+    Shader node class that gets vertex normal values.
+    """
+    label = "Vertex Normal"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = "VertexNormalNode"
+
+
+        self.output = ShaderNodeIO("VertexNormalOutput", "Vertex Color", ShaderValueHint.FLOAT3)
+        self._registerOutput(self.output)
+
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
+        """Generate value for given node output property"""
+        if node_output is self.output:
+            return NodeValue(str, f"{self.name}_{self.output.name}")
+        return NodeValue.noValue()
+
+    def generateShaderCode(self) -> str:
+        """Generates float node shader code"""
+
+        src: str = f"vec3  {self.name}_{self.output.name} = pix_normal;"
+        return src.strip()

@@ -13,13 +13,15 @@ from PySide6.QtWidgets import (
 )
 
 from .shadernodes import (
-        OutputShaderNode,
-        ShaderNodeBase,
-        FloatShaderNode,
-        MulShaderNode,
-        MakeVec3Node,
-        LerpNode,
-        LerpVecNode
+    OutputShaderNode,
+    ShaderNodeBase,
+    FloatShaderNode,
+    MulShaderNode,
+    MakeVec3Node,
+    LerpNode,
+    LerpVecNode,
+    VertexColorShaderNode,
+    VertexNormalShaderNode
 )
 
 from .asserts import assertTrue, assertRef, assertType
@@ -62,6 +64,8 @@ class AppWindow(QMainWindow):
         self.ui.PaletteFrame.layout().addWidget(self.palette_widget)
 
         self.palette_widget.addPaletteItems([
+            VertexColorShaderNode,
+            VertexNormalShaderNode,
             FloatShaderNode,
             MulShaderNode,
             MakeVec3Node,
