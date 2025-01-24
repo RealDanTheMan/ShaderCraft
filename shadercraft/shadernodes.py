@@ -298,7 +298,6 @@ class LerpNode(ShaderNodeBase):
     def __init__(self) -> None:
         super().__init__()
         self.name = "LerpNode"
-        self.label = "Lerp"
 
         # Node inputs
         self.input_a: ShaderNodeIO = ShaderNodeIO("LerpInputA", "a", ShaderValueHint.FLOAT, 0.0)
@@ -337,6 +336,71 @@ class LerpNode(ShaderNodeBase):
         assertRef(output)
         src: str = f"""
                 float {output.value} = mix({a.value}, {b.value}, {t.value});
+        """
+
+        return textwrap.dedent(src).strip()
+
+
+class LerpVecNode(ShaderNodeBase):
+    """
+    Lerp shader node mixes two values using T as interpolator.
+    """
+
+    label = "LerpVec"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = "LerpVecNode"
+
+        # Node inputs
+        self.input_a: ShaderNodeIO = ShaderNodeIO(
+            "LerpInputA",
+            "a",
+            ShaderValueHint.FLOAT3,
+            Vec3F(0.0, 0.0, 0.0)
+        )
+
+        self.input_b: ShaderNodeIO = ShaderNodeIO(
+            "LerpInputB",
+            "b",
+            ShaderValueHint.FLOAT3,
+            Vec3F(1.0, 1.0, 1.0)
+        )
+
+        self.input_t: ShaderNodeIO = ShaderNodeIO("LerpInputT", "t", ShaderValueHint.FLOAT, 0.5)
+        self._registerInput(self.input_a)
+        self._registerInput(self.input_b)
+        self._registerInput(self.input_t)
+
+        # Node outputs
+        self.output: ShaderNodeIO = ShaderNodeIO("LerpOutput", "Out", ShaderValueHint.FLOAT3)
+        self._registerOutput(self.output)
+
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
+        """
+        Generates vec3 output value shader reference.
+        """
+        if node_output is self.output:
+            return NodeValue(str, f"{self.name}_{self.output.name}")
+
+        return NodeValue.noValue()
+
+    def generateShaderCode(self) -> str:
+        """
+        Generate GLSL shader source code for this node.
+        """
+
+        a: NodeValue = self.getNodeInputValue(self.input_a.uuid)
+        b: NodeValue = self.getNodeInputValue(self.input_b.uuid)
+        t: NodeValue = self.getNodeInputValue(self.input_t.uuid)
+        assertRef(a)
+        assertRef(b)
+        assertRef(t)
+
+        output: NodeValue = self.getNodeOutputValue(self.output.uuid)
+        assertRef(output)
+        src: str = f"""
+                vec3 {output.value} = mix({a.value}, {b.value}, {t.value});
         """
 
         return textwrap.dedent(src).strip()
