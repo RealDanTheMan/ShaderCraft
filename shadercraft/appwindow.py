@@ -21,7 +21,9 @@ from .shadernodes import (
     LerpNode,
     LerpVecNode,
     VertexColorShaderNode,
-    VertexNormalShaderNode
+    VertexNormalShaderNode,
+    VertexPositionShaderNode,
+    VectorToColor
 )
 
 from .asserts import assertTrue, assertRef, assertType
@@ -64,6 +66,7 @@ class AppWindow(QMainWindow):
         self.ui.PaletteFrame.layout().addWidget(self.palette_widget)
 
         self.palette_widget.addPaletteItems([
+            VertexPositionShaderNode,
             VertexColorShaderNode,
             VertexNormalShaderNode,
             FloatShaderNode,
@@ -71,6 +74,7 @@ class AppWindow(QMainWindow):
             MakeVec3Node,
             LerpNode,
             LerpVecNode,
+            VectorToColor,
             OutputShaderNode
         ])
 

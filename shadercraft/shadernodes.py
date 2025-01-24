@@ -417,7 +417,7 @@ class VertexColorShaderNode(ShaderNodeBase):
         self.name = "VertexColorNode"
 
 
-        self.output = ShaderNodeIO("VertexColorOutput", "Vertex Color", ShaderValueHint.FLOAT3)
+        self.output = ShaderNodeIO("VertexColorOutput", "Color", ShaderValueHint.FLOAT3)
         self._registerOutput(self.output)
 
     def _generateOutput(self, node_output: NodeIO) -> NodeValue:
@@ -444,7 +444,7 @@ class VertexNormalShaderNode(ShaderNodeBase):
         self.name = "VertexNormalNode"
 
 
-        self.output = ShaderNodeIO("VertexNormalOutput", "Vertex Color", ShaderValueHint.FLOAT3)
+        self.output = ShaderNodeIO("VertexNormalOutput", "Normal", ShaderValueHint.FLOAT3)
         self._registerOutput(self.output)
 
     def _generateOutput(self, node_output: NodeIO) -> NodeValue:
@@ -457,4 +457,69 @@ class VertexNormalShaderNode(ShaderNodeBase):
         """Generates float node shader code"""
 
         src: str = f"vec3  {self.name}_{self.output.name} = pix_normal;"
+        return src.strip()
+
+
+class VertexPositionShaderNode(ShaderNodeBase):
+    """
+    Shader node class that gets vertex position.
+    """
+    label = "Vertex Position"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = "VertexPositionNode"
+
+
+        self.output = ShaderNodeIO("VertexPositionOutput", "Position", ShaderValueHint.FLOAT3)
+        self._registerOutput(self.output)
+
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
+        """Generate value for given node output property"""
+        if node_output is self.output:
+            return NodeValue(str, f"{self.name}_{self.output.name}")
+        return NodeValue.noValue()
+
+    def generateShaderCode(self) -> str:
+        """Generates float node shader code"""
+
+        src: str = f"vec3  {self.name}_{self.output.name} = pix_position;"
+        return src.strip()
+
+
+class VectorToColor(ShaderNodeBase):
+    """
+    Shader node class that gets vertex position.
+    """
+    label = "Vector To Color"
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.name = "VectorToColorNode"
+
+        # Node inputs
+        self.input: ShaderNodeIO = ShaderNodeIO(
+            "Input",
+            "Vec",
+            ShaderValueHint.FLOAT3,
+            Vec3F(1.0, 0.0, 0.0)
+        )
+        self._registerInput(self.input)
+
+        # Node outptus
+        self.output = ShaderNodeIO("ColorOutput", "Color", ShaderValueHint.FLOAT3)
+        self._registerOutput(self.output)
+
+    def _generateOutput(self, node_output: NodeIO) -> NodeValue:
+        """Generate value for given node output property"""
+        if node_output is self.output:
+            return NodeValue(str, f"{self.name}_{self.output.name}")
+        return NodeValue.noValue()
+
+    def generateShaderCode(self) -> str:
+        """Generates float node shader code"""
+        input_val: NodeValue = self.getNodeInputValue(self.input.uuid)
+        assertType(input_val, NodeValue)
+
+        src: str = f"vec3 {self.name}_{self.output.name} = {input_val.value} * 0.5 + 0.5;"
         return src.strip()
